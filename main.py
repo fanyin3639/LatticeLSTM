@@ -236,8 +236,8 @@ def batchify_with_label(input_batch_list, gpu, volatile_flag=False):
 def train(data, save_model_dir, seg=True):
     print("Training model...")
     data.show_data_summary()
-    save_data_name = save_model_dir +".dset"
-    save_data_setting(data, save_data_name)
+    # save_data_name = save_model_dir +".dset"
+    # save_data_setting(data, save_data_name)
     model = SeqModel(data)
     print("finished built model.")
     loss_function = nn.NLLLoss()
@@ -368,16 +368,15 @@ if __name__ == '__main__':
     parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
     parser.add_argument('--savemodel', default="data/model/saved_model.lstmcrf.")
     parser.add_argument('--savedset', help='Dir of saved data setting', default="data/save.dset")
-    parser.add_argument('--train', default="data/conll03/train.bmes") 
-    parser.add_argument('--dev', default="data/conll03/dev.bmes" )  
-    parser.add_argument('--test', default="data/conll03/test.bmes") 
+    parser.add_argument('--train', default="data/ResumeNER/train.char.bmes")
+    parser.add_argument('--dev', default="data/ResumeNER/dev.char.bmes" )
+    parser.add_argument('--test', default="data/ResumeNER/test.char.bmes")
     parser.add_argument('--seg', default="True") 
     parser.add_argument('--extendalphabet', default="True") 
     parser.add_argument('--raw') 
     parser.add_argument('--loadmodel')
     parser.add_argument('--output') 
     args = parser.parse_args()
-   
     train_file = args.train
     dev_file = args.dev
     test_file = args.test
@@ -433,6 +432,8 @@ if __name__ == '__main__':
         data.build_word_pretrain_emb(char_emb)
         data.build_biword_pretrain_emb(bichar_emb)
         data.build_gaz_pretrain_emb(gaz_file)
+        # torch.save(data, './data.pt')
+        # data = torch.load('./data.pt')
         train(data, save_model_dir, seg)
     elif status == 'test':      
         data = load_data_setting(dset_dir)

@@ -13,7 +13,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from .charbilstm import CharBiLSTM
 from .charcnn import CharCNN
 from .latticelstm import LatticeLSTM
-from glyph_embedding.models.basic_glyph_embedding import GlyphEmbedding
+from glyph_embedding.models.char_glyph_embedding import GlyphEmbedding
 from glyph_embedding.utils.default_config import GlyphEmbeddingConfig
 
 class BiLSTM(nn.Module):
@@ -41,7 +41,8 @@ class BiLSTM(nn.Module):
         self.drop = nn.Dropout(data.HP_dropout)
         self.droplstm = nn.Dropout(data.HP_dropout)
         self.glyph_config = GlyphEmbeddingConfig()
-        self.glyph_embedding = GlyphEmbedding(self.glyph_config)
+        self.glyph_config.idx2word = ['and']
+        self.glyph_embedding = GlyphEmbedding(self.glyph_config).cuda()
         self.word_embeddings = nn.Embedding(data.word_alphabet.size(), self.embedding_dim)
         self.biword_embeddings = nn.Embedding(data.biword_alphabet.size(), data.biword_emb_dim)
         self.bilstm_flag = data.HP_bilstm
@@ -107,6 +108,7 @@ class BiLSTM(nn.Module):
         """
         batch_size = word_inputs.size(0)
         sent_len = word_inputs.size(1)
+        glyph_embs = self.glyph_embedding(word_inputs)
         word_embs =  self.word_embeddings(word_inputs)
         if self.use_bigram:
             biword_embs = self.biword_embeddings(biword_inputs)
