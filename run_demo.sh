@@ -1,3 +1,4 @@
+export CUDA_VISIBLE_DEVICES=1
 python main.py --status train \
 		--train ./data/demo.train.char \
 		--dev ./data/demo.dev.char \

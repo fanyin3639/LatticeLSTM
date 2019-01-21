@@ -13,6 +13,8 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from .charbilstm import CharBiLSTM
 from .charcnn import CharCNN
 from .latticelstm import LatticeLSTM
+from glyph_embedding.models.basic_glyph_embedding import GlyphEmbedding
+from glyph_embedding.utils.default_config import GlyphEmbeddingConfig
 
 class BiLSTM(nn.Module):
     def __init__(self, data):
@@ -38,6 +40,8 @@ class BiLSTM(nn.Module):
         self.hidden_dim = data.HP_hidden_dim
         self.drop = nn.Dropout(data.HP_dropout)
         self.droplstm = nn.Dropout(data.HP_dropout)
+        self.glyph_config = GlyphEmbeddingConfig()
+        self.glyph_embedding = GlyphEmbedding(self.glyph_config)
         self.word_embeddings = nn.Embedding(data.word_alphabet.size(), self.embedding_dim)
         self.biword_embeddings = nn.Embedding(data.biword_alphabet.size(), data.biword_emb_dim)
         self.bilstm_flag = data.HP_bilstm

@@ -196,8 +196,8 @@ class CRF(nn.Module):
 
 
     def forward(self, feats):
-    	path_score, best_path = self._viterbi_decode(feats)
-    	return path_score, best_path
+        path_score, best_path = self._viterbi_decode(feats)
+        return path_score, best_path
         
 
     def _score_sentence(self, scores, mask, tags):
