@@ -230,8 +230,11 @@ class LatticeLSTM(nn.Module):
             hx = autograd.Variable(torch.zeros(batch_size, self.hidden_dim))
             cx = autograd.Variable(torch.zeros(batch_size, self.hidden_dim))
             if self.gpu:
-                hx = hx.cuda()
-                cx = cx.cuda()
+                try:
+                    hx = hx.cuda()
+                    cx = cx.cuda()
+                except:
+                    print(hx)
         
         id_list = list(range(seq_len))
         if not self.left2right:

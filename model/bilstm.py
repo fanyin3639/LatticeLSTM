@@ -13,7 +13,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from .charbilstm import CharBiLSTM
 from .charcnn import CharCNN
 from .latticelstm import LatticeLSTM
-from glyph_embedding.models.char_glyph_embedding import GlyphEmbedding
+from glyph_embedding.models.char_glyph_embedding import CharGlyphEmbedding
 from glyph_embedding.utils.default_config import GlyphEmbeddingConfig
 
 class BiLSTM(nn.Module):
@@ -41,11 +41,17 @@ class BiLSTM(nn.Module):
         self.drop = nn.Dropout(data.HP_dropout)
         self.droplstm = nn.Dropout(data.HP_dropout)
         self.glyph_config = GlyphEmbeddingConfig()
-        self.glyph_config.idx2word = ['and']
-        self.glyph_embedding = GlyphEmbedding(self.glyph_config).cuda()
+        self.glyph_config.char_embsize = 0
+        self.glyph_config.glyph_embsize = 32
+        self.glyph_config.font_channels = 2
+        self.glyph_config.output_size = 32
+        self.glyph_config.idx2char = data.char_alphabet.instances
+        self.glyph_embedding = CharGlyphEmbedding(self.glyph_config).cuda()
         self.word_embeddings = nn.Embedding(data.word_alphabet.size(), self.embedding_dim)
         self.biword_embeddings = nn.Embedding(data.biword_alphabet.size(), data.biword_emb_dim)
         self.bilstm_flag = data.HP_bilstm
+        self.idx2char = data.char_alphabet.instances
+
         # self.bilstm_flag = False
         self.lstm_layer = data.HP_lstm_layer
         if data.pretrain_word_embedding is not None:
@@ -64,7 +70,7 @@ class BiLSTM(nn.Module):
             lstm_hidden = data.HP_hidden_dim // 2
         else:
             lstm_hidden = data.HP_hidden_dim
-        lstm_input = self.embedding_dim + self.char_hidden_dim
+        lstm_input = self.embedding_dim + self.char_hidden_dim + self.glyph_config.output_size
         if self.use_bigram:
             lstm_input += data.biword_emb_dim
         self.forward_lstm = LatticeLSTM(lstm_input, lstm_hidden, data.gaz_dropout, data.gaz_alphabet.size(), data.gaz_emb_dim, data.pretrain_gaz_embedding, True, data.HP_fix_gaz_emb, self.gpu)
@@ -108,8 +114,10 @@ class BiLSTM(nn.Module):
         """
         batch_size = word_inputs.size(0)
         sent_len = word_inputs.size(1)
-        glyph_embs = self.glyph_embedding(word_inputs)
+        glyph_embs, glyph_loss = self.glyph_embedding(word_inputs)
         word_embs =  self.word_embeddings(word_inputs)
+        word_embs = torch.cat([word_embs, glyph_embs], 2)
+
         if self.use_bigram:
             biword_embs = self.biword_embeddings(biword_inputs)
             word_embs = torch.cat([word_embs, biword_embs],2)
@@ -130,15 +138,15 @@ class BiLSTM(nn.Module):
             lstm_out = torch.cat([lstm_out, backward_lstm_out],2)
         # lstm_out, _ = pad_packed_sequence(lstm_out)
         lstm_out = self.droplstm(lstm_out)
-        return lstm_out
+        return lstm_out, glyph_loss
 
 
 
     def get_output_score(self, gaz_list,  word_inputs, biword_inputs, word_seq_lengths, char_inputs, char_seq_lengths, char_seq_recover):
-        lstm_out = self.get_lstm_features(gaz_list, word_inputs,biword_inputs, word_seq_lengths, char_inputs, char_seq_lengths, char_seq_recover)
+        lstm_out, glyph_loss = self.get_lstm_features(gaz_list, word_inputs,biword_inputs, word_seq_lengths, char_inputs, char_seq_lengths, char_seq_recover)
         ## lstm_out (batch_size, sent_len, hidden_dim)
         outputs = self.hidden2tag(lstm_out)
-        return outputs
+        return outputs, glyph_loss
     
 
     def neg_log_likelihood_loss(self, gaz_list, word_inputs, biword_inputs, word_seq_lengths, char_inputs, char_seq_lengths, char_seq_recover, batch_label, mask):
@@ -147,7 +155,7 @@ class BiLSTM(nn.Module):
         seq_len = word_inputs.size(1)
         total_word = batch_size * seq_len
         loss_function = nn.NLLLoss(ignore_index=0, size_average=False)
-        outs = self.get_output_score(gaz_list, word_inputs, biword_inputs, word_seq_lengths, char_inputs, char_seq_lengths, char_seq_recover)
+        outs, glyph_loss = self.get_output_score(gaz_list, word_inputs, biword_inputs, word_seq_lengths, char_inputs, char_seq_lengths, char_seq_recover)
         # outs (batch_size, seq_len, label_vocab)
         outs = outs.view(total_word, -1)
         score = F.log_softmax(outs, 1)
@@ -162,7 +170,7 @@ class BiLSTM(nn.Module):
         batch_size = word_inputs.size(0)
         seq_len = word_inputs.size(1)
         total_word = batch_size * seq_len
-        outs = self.get_output_score(gaz_list,  word_inputs, biword_inputs, word_seq_lengths, char_inputs, char_seq_lengths, char_seq_recover)
+        outs, glyph_loss = self.get_output_score(gaz_list,  word_inputs, biword_inputs, word_seq_lengths, char_inputs, char_seq_lengths, char_seq_recover)
         outs = outs.view(total_word, -1)
         _, tag_seq  = torch.max(outs, 1)
         tag_seq = tag_seq.view(batch_size, seq_len)

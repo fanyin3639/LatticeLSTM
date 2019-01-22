@@ -4,22 +4,22 @@
 # @Last Modified by:   Jie Yang,     Contact: jieynlp@gmail.com
 # @Last Modified time: 2018-07-06 11:08:27
 
-import time
-import sys
 import argparse
-import random
 import copy
-import torch
 import gc
 import pickle as pickle
+import random
+import sys
+import time
+
+import numpy as np
+import torch
 import torch.autograd as autograd
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-import numpy as np
-from utils.metric import get_ner_fmeasure
+
 from model.bilstmcrf import BiLSTM_CRF as SeqModel
-from utils.data import Data
+from utils.metric import get_ner_fmeasure
 
 seed_num = 100
 random.seed(seed_num)
@@ -151,7 +151,7 @@ def evaluate(data, model, name):
             continue
         gaz_list,batch_word, batch_biword, batch_wordlen, batch_wordrecover, batch_char, batch_charlen, batch_charrecover, batch_label, mask  = batchify_with_label(instance, data.HP_gpu, True)
         tag_seq = model(gaz_list,batch_word, batch_biword, batch_wordlen, batch_char, batch_charlen, batch_charrecover, mask)
-        # print "tag:",tag_seq
+        # print("tag_seq", tag_seq)
         pred_label, gold_label = recover_label(tag_seq, batch_label, mask, data.label_alphabet, batch_wordrecover)
         pred_results += pred_label
         gold_results += gold_label
@@ -293,6 +293,8 @@ def train(data, save_model_dir, seg=True):
                 print(("     Instance: %s; Time: %.2fs; loss: %.4f; acc: %s/%s=%.4f"%(end, temp_cost, sample_loss, right_token, whole_token,(right_token+0.)/whole_token)))
                 sys.stdout.flush()
                 sample_loss = 0
+                speed, acc, p, r, f, _ = evaluate(data, model, "dev")
+                speed, acc, p, r, f, _ = evaluate(data, model, "test")
             if end%data.HP_batch_size == 0:
                 batch_loss.backward()
                 optimizer.step()
@@ -366,7 +368,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
     parser.add_argument('--embedding',  help='Embedding for words', default='None')
     parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
-    parser.add_argument('--savemodel', default="data/model/saved_model.lstmcrf.")
+    parser.add_argument('--savemodel', default="data/ResumeNER/saved_model")
     parser.add_argument('--savedset', help='Dir of saved data setting', default="data/save.dset")
     parser.add_argument('--train', default="data/ResumeNER/train.char.bmes")
     parser.add_argument('--dev', default="data/ResumeNER/dev.char.bmes" )
@@ -417,23 +419,23 @@ if __name__ == '__main__':
     sys.stdout.flush()
     
     if status == 'train':
-        data = Data()
-        data.HP_gpu = gpu
-        data.HP_use_char = False
-        data.HP_batch_size = 1
-        data.use_bigram = False
-        data.gaz_dropout = 0.5
-        data.norm_gaz_emb = False
-        data.HP_fix_gaz_emb = False
-        data_initialization(data, gaz_file, train_file, dev_file, test_file)
-        data.generate_instance_with_gaz(train_file,'train')
-        data.generate_instance_with_gaz(dev_file,'dev')
-        data.generate_instance_with_gaz(test_file,'test')
-        data.build_word_pretrain_emb(char_emb)
-        data.build_biword_pretrain_emb(bichar_emb)
-        data.build_gaz_pretrain_emb(gaz_file)
+        # data = Data()
+        # data.HP_gpu = gpu
+        # data.HP_use_char = False
+        # data.HP_batch_size = 1
+        # data.use_bigram = False
+        # data.gaz_dropout = 0.5
+        # data.norm_gaz_emb = False
+        # data.HP_fix_gaz_emb = False
+        # data_initialization(data, gaz_file, train_file, dev_file, test_file)
+        # data.generate_instance_with_gaz(train_file,'train')
+        # data.generate_instance_with_gaz(dev_file,'dev')
+        # data.generate_instance_with_gaz(test_file,'test')
+        # data.build_word_pretrain_emb(char_emb)
+        # data.build_biword_pretrain_emb(bichar_emb)
+        # data.build_gaz_pretrain_emb(gaz_file)
         # torch.save(data, './data.pt')
-        # data = torch.load('./data.pt')
+        data = torch.load('./data.pt')
         train(data, save_model_dir, seg)
     elif status == 'test':      
         data = load_data_setting(dset_dir)
