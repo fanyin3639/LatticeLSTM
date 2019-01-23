@@ -20,6 +20,7 @@ import torch.optim as optim
 
 from model.bilstmcrf import BiLSTM_CRF as SeqModel
 from utils.metric import get_ner_fmeasure
+from utils.data import Data
 
 seed_num = 42
 random.seed(seed_num)
@@ -372,8 +373,8 @@ if __name__ == '__main__':
     parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
     parser.add_argument('--savemodel', default=savemodel)
     parser.add_argument('--savedset', help='Dir of saved data setting', default=savemodel + '/save.dset')
-    parser.add_argument('--name', default='ResumeNER')
-    parser.add_argument('--mode', default='char')
+    parser.add_argument('--name', default='WeiboNER')
+    parser.add_argument('--mode', default='all')
     parser.add_argument('--data_dir', default='/data/nfsdata/nlp/datasets/sequence_labeling/CN_NER/')
     parser.add_argument('--extendalphabet', default="True")
     parser.add_argument('--raw') 
@@ -412,22 +413,22 @@ if __name__ == '__main__':
     sys.stdout.flush()
     
     if status == 'train':
-        # data = Data()
-        # data.HP_gpu = gpu
-        # data.HP_use_char = False
-        # data.HP_batch_size = 1
-        # data.use_bigram = False
-        # data.gaz_dropout = 0.5
-        # data.norm_gaz_emb = False
-        # data.HP_fix_gaz_emb = False
-        # data_initialization(data, gaz_file, train_file, dev_file, test_file)
-        # data.generate_instance_with_gaz(train_file,'train')
-        # data.generate_instance_with_gaz(dev_file,'dev')
-        # data.generate_instance_with_gaz(test_file,'test')
-        # data.build_word_pretrain_emb(char_emb)
-        # data.build_biword_pretrain_emb(bichar_emb)
-        # data.build_gaz_pretrain_emb(gaz_file)
-        # torch.save(data, args.savemodel + F'/{args.name}.pt')
+        data = Data()
+        data.HP_gpu = gpu
+        data.HP_use_char = False
+        data.HP_batch_size = 1
+        data.use_bigram = False
+        data.gaz_dropout = 0.5
+        data.norm_gaz_emb = False
+        data.HP_fix_gaz_emb = False
+        data_initialization(data, gaz_file, train_file, dev_file, test_file)
+        data.generate_instance_with_gaz(train_file,'train')
+        data.generate_instance_with_gaz(dev_file,'dev')
+        data.generate_instance_with_gaz(test_file,'test')
+        data.build_word_pretrain_emb(char_emb)
+        data.build_biword_pretrain_emb(bichar_emb)
+        data.build_gaz_pretrain_emb(gaz_file)
+        torch.save(data, args.savemodel + F'/{args.name}.pt')
         data = torch.load(args.savemodel + F'/{args.name}.pt')
         train(data, args.savemodel)
     elif status == 'test':      

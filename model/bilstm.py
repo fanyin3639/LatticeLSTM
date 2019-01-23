@@ -88,7 +88,8 @@ class BiLSTM(nn.Module):
         if self.gpu:
             self.drop = self.drop.cuda()
             self.droplstm = self.droplstm.cuda()
-            self.glyph_embedding = self.glyph_embedding.cuda()
+            if self.use_glyph:
+                self.glyph_embedding = self.glyph_embedding.cuda()
             self.word_embeddings = self.word_embeddings.cuda()
             self.biword_embeddings = self.biword_embeddings.cuda()
             self.forward_lstm = self.forward_lstm.cuda()
@@ -121,6 +122,7 @@ class BiLSTM(nn.Module):
         sent_len = word_inputs.size(1)
 
         word_embs =  self.word_embeddings(word_inputs)
+        glyph_loss = 0
         if self.use_glyph:
             glyph_embs, glyph_loss = self.glyph_embedding(word_inputs)
             word_embs = torch.cat([word_embs, glyph_embs], 2)

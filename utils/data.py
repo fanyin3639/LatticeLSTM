@@ -70,12 +70,12 @@ class Data:
         self.HP_lstm_layer = 1
         self.HP_bilstm = True
         self.HP_use_char = False
-        self.HP_use_glyph = True
         self.HP_gpu = False
         self.HP_lr = 0.015
         self.HP_lr_decay = 0.05
         self.HP_clip = 5.0
         self.HP_momentum = 0
+        self.HP_use_glyph = False
         self.HP_glyph_ratio = 0.05
 
 
