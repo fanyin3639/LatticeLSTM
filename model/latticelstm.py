@@ -1,10 +1,9 @@
 """Implementation of batch-normalized LSTM."""
-import torch
-from torch import nn
-import torch.autograd as autograd
-from torch.autograd import Variable
-from torch.nn import functional, init
 import numpy as np
+import torch
+import torch.autograd as autograd
+from torch import nn
+from torch.nn import init
 
 
 class WordLSTMCell(nn.Module):
@@ -230,12 +229,9 @@ class LatticeLSTM(nn.Module):
             hx = autograd.Variable(torch.zeros(batch_size, self.hidden_dim))
             cx = autograd.Variable(torch.zeros(batch_size, self.hidden_dim))
             if self.gpu:
-                try:
-                    hx = hx.cuda()
-                    cx = cx.cuda()
-                except:
-                    print(hx)
-        
+                hx = hx.cuda()
+                cx = cx.cuda()
+
         id_list = list(range(seq_len))
         if not self.left2right:
             id_list = list(reversed(id_list))

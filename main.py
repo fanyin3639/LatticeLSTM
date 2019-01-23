@@ -21,7 +21,7 @@ import torch.optim as optim
 from model.bilstmcrf import BiLSTM_CRF as SeqModel
 from utils.metric import get_ner_fmeasure
 
-seed_num = 100
+seed_num = 42
 random.seed(seed_num)
 torch.manual_seed(seed_num)
 np.random.seed(seed_num)
@@ -141,6 +141,7 @@ def evaluate(data, model, name):
     start_time = time.time()
     train_num = len(instances)
     total_batch = train_num//batch_size+1
+
     for batch_id in range(total_batch):
         start = batch_id*batch_size
         end = (batch_id+1)*batch_size 
@@ -293,8 +294,6 @@ def train(data, save_model_dir, seg=True):
                 print(("     Instance: %s; Time: %.2fs; loss: %.4f; acc: %s/%s=%.4f"%(end, temp_cost, sample_loss, right_token, whole_token,(right_token+0.)/whole_token)))
                 sys.stdout.flush()
                 sample_loss = 0
-                speed, acc, p, r, f, _ = evaluate(data, model, "dev")
-                speed, acc, p, r, f, _ = evaluate(data, model, "test")
             if end%data.HP_batch_size == 0:
                 batch_loss.backward()
                 optimizer.step()
@@ -365,48 +364,42 @@ def load_model_decode(model_dir, data, name, gpu, seg=True):
 
 
 if __name__ == '__main__':
+    char_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.uni.ite50.vec'
+    gaz_file = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'
+    savemodel = '/data/nfsdata/nlp/projects/resume_ner'
     parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
     parser.add_argument('--embedding',  help='Embedding for words', default='None')
     parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
-    parser.add_argument('--savemodel', default="data/ResumeNER/saved_model")
-    parser.add_argument('--savedset', help='Dir of saved data setting', default="data/save.dset")
-    parser.add_argument('--train', default="data/ResumeNER/train.char.bmes")
-    parser.add_argument('--dev', default="data/ResumeNER/dev.char.bmes" )
-    parser.add_argument('--test', default="data/ResumeNER/test.char.bmes")
-    parser.add_argument('--seg', default="True") 
-    parser.add_argument('--extendalphabet', default="True") 
+    parser.add_argument('--savemodel', default=savemodel)
+    parser.add_argument('--savedset', help='Dir of saved data setting', default=savemodel + '/save.dset')
+    parser.add_argument('--name', default='ResumeNER')
+    parser.add_argument('--mode', default='char')
+    parser.add_argument('--data_dir', default='/data/nfsdata/nlp/datasets/sequence_labeling/CN_NER/')
+    parser.add_argument('--extendalphabet', default="True")
     parser.add_argument('--raw') 
     parser.add_argument('--loadmodel')
     parser.add_argument('--output') 
     args = parser.parse_args()
-    train_file = args.train
-    dev_file = args.dev
-    test_file = args.test
+    train_file = F'{args.data_dir}/{args.name}/train.{args.mode}.bmes'
+    dev_file = F'{args.data_dir}/{args.name}/dev.{args.mode}.bmes'
+    test_file = F'{args.data_dir}/{args.name}/test.{args.mode}.bmes'
     raw_file = args.raw
     model_dir = args.loadmodel
     dset_dir = args.savedset
     output_file = args.output
-    if args.seg.lower() == "true":
-        seg = True 
-    else:
-        seg = False
     status = args.status.lower()
 
-    save_model_dir = args.savemodel
     gpu = torch.cuda.is_available()
 
-    char_emb = "data/gigaword_chn.all.a2b.uni.ite50.vec"
     bichar_emb = None
-    gaz_file = "data/ctb.50d.vec"
     # gaz_file = None
     # char_emb = None
-    #bichar_emb = None
+    # bichar_emb = None
 
     print("CuDNN:", torch.backends.cudnn.enabled)
     # gpu = False
     print("GPU available:", gpu)
     print("Status:", status)
-    print("Seg: ", seg)
     print("Train file:", train_file)
     print("Dev file:", dev_file)
     print("Test file:", test_file)
@@ -415,7 +408,7 @@ if __name__ == '__main__':
     print("Bichar emb:", bichar_emb)
     print("Gaz file:",gaz_file)
     if status == 'train':
-        print("Model saved to:", save_model_dir)
+        print("Model saved to:", args.savemodel)
     sys.stdout.flush()
     
     if status == 'train':
@@ -434,19 +427,19 @@ if __name__ == '__main__':
         # data.build_word_pretrain_emb(char_emb)
         # data.build_biword_pretrain_emb(bichar_emb)
         # data.build_gaz_pretrain_emb(gaz_file)
-        # torch.save(data, './data.pt')
-        data = torch.load('./data.pt')
-        train(data, save_model_dir, seg)
+        # torch.save(data, args.savemodel + F'/{args.name}.pt')
+        data = torch.load(args.savemodel + F'/{args.name}.pt')
+        train(data, args.savemodel)
     elif status == 'test':      
         data = load_data_setting(dset_dir)
         data.generate_instance_with_gaz(dev_file,'dev')
-        load_model_decode(model_dir, data , 'dev', gpu, seg)
+        load_model_decode(model_dir, data , 'dev', gpu)
         data.generate_instance_with_gaz(test_file,'test')
-        load_model_decode(model_dir, data, 'test', gpu, seg)
+        load_model_decode(model_dir, data, 'test', gpu)
     elif status == 'decode':       
         data = load_data_setting(dset_dir)
         data.generate_instance_with_gaz(raw_file,'raw')
-        decode_results = load_model_decode(model_dir, data, 'raw', gpu, seg)
+        decode_results = load_model_decode(model_dir, data, 'raw', gpu)
         data.write_decoded_results(output_file, decode_results, 'raw')
     else:
         print("Invalid argument! Please use valid arguments! (train/test/decode)")

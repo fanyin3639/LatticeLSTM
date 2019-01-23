@@ -3,24 +3,25 @@
 # @Date:   2017-10-17 16:47:32
 # @Last Modified by:   Jie Yang,     Contact: jieynlp@gmail.com
 # @Last Modified time: 2018-05-03 21:58:36
+import numpy as np
 import torch
-import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from glyph_embedding.models.char_glyph_embedding import CharGlyphEmbedding
+from glyph_embedding.utils.default_config import GlyphEmbeddingConfig
+
 # from kblayer import GazLayer
 from .charbilstm import CharBiLSTM
 from .charcnn import CharCNN
 from .latticelstm import LatticeLSTM
-from glyph_embedding.models.char_glyph_embedding import CharGlyphEmbedding
-from glyph_embedding.utils.default_config import GlyphEmbeddingConfig
+
 
 class BiLSTM(nn.Module):
     def __init__(self, data):
         super(BiLSTM, self).__init__()
         print("build batched bilstm...")
         self.use_bigram = data.use_bigram
+        self.use_glyph = data.HP_use_glyph
         self.gpu = data.HP_gpu
         self.use_char = data.HP_use_char
         self.use_gaz = data.HP_use_gaz
@@ -36,21 +37,22 @@ class BiLSTM(nn.Module):
             else:
                 print("Error char feature selection, please check parameter data.char_features (either CNN or LSTM).")
                 exit(0)
+        if self.use_glyph:
+            self.glyph_config = GlyphEmbeddingConfig()
+            self.glyph_config.char_embsize = 0
+            self.glyph_config.glyph_embsize = 32
+            self.glyph_config.font_channels = 2
+            self.glyph_config.output_size = 32
+            self.glyph_config.idx2char = [''] + data.char_alphabet.instances
+            self.glyph_embedding = CharGlyphEmbedding(self.glyph_config)
         self.embedding_dim = data.word_emb_dim
         self.hidden_dim = data.HP_hidden_dim
         self.drop = nn.Dropout(data.HP_dropout)
         self.droplstm = nn.Dropout(data.HP_dropout)
-        self.glyph_config = GlyphEmbeddingConfig()
-        self.glyph_config.char_embsize = 0
-        self.glyph_config.glyph_embsize = 32
-        self.glyph_config.font_channels = 2
-        self.glyph_config.output_size = 32
-        self.glyph_config.idx2char = data.char_alphabet.instances
-        self.glyph_embedding = CharGlyphEmbedding(self.glyph_config).cuda()
+
         self.word_embeddings = nn.Embedding(data.word_alphabet.size(), self.embedding_dim)
         self.biword_embeddings = nn.Embedding(data.biword_alphabet.size(), data.biword_emb_dim)
         self.bilstm_flag = data.HP_bilstm
-        self.idx2char = data.char_alphabet.instances
 
         # self.bilstm_flag = False
         self.lstm_layer = data.HP_lstm_layer
@@ -70,9 +72,11 @@ class BiLSTM(nn.Module):
             lstm_hidden = data.HP_hidden_dim // 2
         else:
             lstm_hidden = data.HP_hidden_dim
-        lstm_input = self.embedding_dim + self.char_hidden_dim + self.glyph_config.output_size
+        lstm_input = self.embedding_dim + self.char_hidden_dim
         if self.use_bigram:
             lstm_input += data.biword_emb_dim
+        if self.use_glyph:
+            lstm_input += self.glyph_config.glyph_embsize
         self.forward_lstm = LatticeLSTM(lstm_input, lstm_hidden, data.gaz_dropout, data.gaz_alphabet.size(), data.gaz_emb_dim, data.pretrain_gaz_embedding, True, data.HP_fix_gaz_emb, self.gpu)
         if self.bilstm_flag:
             self.backward_lstm = LatticeLSTM(lstm_input, lstm_hidden, data.gaz_dropout, data.gaz_alphabet.size(), data.gaz_emb_dim, data.pretrain_gaz_embedding, False, data.HP_fix_gaz_emb, self.gpu)
@@ -84,6 +88,7 @@ class BiLSTM(nn.Module):
         if self.gpu:
             self.drop = self.drop.cuda()
             self.droplstm = self.droplstm.cuda()
+            self.glyph_embedding = self.glyph_embedding.cuda()
             self.word_embeddings = self.word_embeddings.cuda()
             self.biword_embeddings = self.biword_embeddings.cuda()
             self.forward_lstm = self.forward_lstm.cuda()
@@ -114,9 +119,11 @@ class BiLSTM(nn.Module):
         """
         batch_size = word_inputs.size(0)
         sent_len = word_inputs.size(1)
-        glyph_embs, glyph_loss = self.glyph_embedding(word_inputs)
+
         word_embs =  self.word_embeddings(word_inputs)
-        word_embs = torch.cat([word_embs, glyph_embs], 2)
+        if self.use_glyph:
+            glyph_embs, glyph_loss = self.glyph_embedding(word_inputs)
+            word_embs = torch.cat([word_embs, glyph_embs], 2)
 
         if self.use_bigram:
             biword_embs = self.biword_embeddings(biword_inputs)

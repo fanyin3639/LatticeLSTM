@@ -3,11 +3,7 @@
 # @Date:   2017-06-14 17:34:32
 # @Last Modified by:   Jie Yang,     Contact: jieynlp@gmail.com
 # @Last Modified time: 2018-01-29 15:26:51
-import sys
-import numpy as np
-from .alphabet import Alphabet
 from .functions import *
-import pickle as pickle
 from .gazetteer import Gazetteer
 
 
@@ -17,7 +13,7 @@ PADDING = "</pad>"
 NULLKEY = "-null-"
 
 class Data:
-    def __init__(self): 
+    def __init__(self):
         self.MAX_SENTENCE_LENGTH = 250
         self.MAX_WORD_LENGTH = -1
         self.number_normalized = True
@@ -40,7 +36,7 @@ class Data:
         self.HP_use_gaz = True
 
         self.tagScheme = "NoSeg"
-        self.char_features = "LSTM" 
+        self.char_features = "LSTM"
 
         self.train_texts = []
         self.dev_texts = []
@@ -74,13 +70,15 @@ class Data:
         self.HP_lstm_layer = 1
         self.HP_bilstm = True
         self.HP_use_char = False
+        self.HP_use_glyph = True
         self.HP_gpu = False
         self.HP_lr = 0.015
         self.HP_lr_decay = 0.05
         self.HP_clip = 5.0
         self.HP_momentum = 0
+        self.HP_glyph_ratio = 0.05
 
-        
+
     def show_data_summary(self):
         print("DATA SUMMARY START:")
         print(("     Tag          scheme: %s"%(self.tagScheme)))
@@ -231,8 +229,8 @@ class Data:
         self.word_alphabet.close()
         self.biword_alphabet.close()
         self.char_alphabet.close()
-        self.label_alphabet.close() 
-        self.gaz_alphabet.close()  
+        self.label_alphabet.close()
+        self.gaz_alphabet.close()
 
 
     def build_word_pretrain_emb(self, emb_path):
