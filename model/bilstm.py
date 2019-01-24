@@ -40,9 +40,11 @@ class BiLSTM(nn.Module):
         if self.use_glyph:
             self.glyph_config = GlyphEmbeddingConfig()
             self.glyph_config.char_embsize = 0
-            self.glyph_config.glyph_embsize = 32
-            self.glyph_config.font_channels = 2
-            self.glyph_config.output_size = 32
+            self.glyph_config.glyph_embsize = data.HP_glyph_embsize
+            self.glyph_config.font_channels = data.HP_font_channels
+            self.glyph_config.output_size = data.HP_glyph_output_size
+            self.glyph_config.dropout = data.HP_glyph_dropout
+            self.glyph_config.cnn_dropout = data.HP_glyph_cnn_dropout
             self.glyph_config.idx2char = [''] + data.char_alphabet.instances
             self.glyph_embedding = CharGlyphEmbedding(self.glyph_config)
         self.embedding_dim = data.word_emb_dim

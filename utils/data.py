@@ -77,6 +77,12 @@ class Data:
         self.HP_momentum = 0
         self.HP_use_glyph = False
         self.HP_glyph_ratio = 0.05
+        self.HP_glyph_font_channels = 2
+        self.HP_glyph_highway = False
+        self.HP_glyph_embsize = 32
+        self.HP_glyph_output_size = 32
+        self.HP_glyph_dropout = 0.7
+        self.HP_glyph_cnn_dropout = 0.5
 
 
     def show_data_summary(self):
