@@ -3,12 +3,11 @@
 # @Date:   2017-10-17 16:47:32
 # @Last Modified by:   Jie Yang,     Contact: jieynlp@gmail.com
 # @Last Modified time: 2017-12-06 16:21:33
-import torch
-import torch.autograd as autograd
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import numpy as np
+import torch
+import torch.nn as nn
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
 
 class CharBiLSTM(nn.Module):
     def __init__(self, alphabet_size, embedding_dim, hidden_dim, dropout, gpu, bidirect_flag = True):
@@ -62,7 +61,6 @@ class CharBiLSTM(nn.Module):
                 Variable(batch_size, word_length, char_hidden_dim)
             Note it only accepts ordered (length) variable, length size is recorded in seq_lengths
         """
-        batch_size = input.size(0)
         char_embeds = self.char_drop(self.char_embeddings(input))
         char_hidden = None
         pack_input = pack_padded_sequence(char_embeds, seq_lengths, True)

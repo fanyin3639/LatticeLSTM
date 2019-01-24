@@ -6,8 +6,7 @@
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
+
 START_TAG = -2
 STOP_TAG = -1
 

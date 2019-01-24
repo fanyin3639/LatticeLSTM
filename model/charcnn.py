@@ -3,11 +3,11 @@
 # @Date:   2017-10-17 16:47:32
 # @Last Modified by:   Jie Yang,     Contact: jieynlp@gmail.com
 # @Last Modified time: 2017-12-06 23:24:42
+import numpy as np
 import torch
-import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
+
 
 class CharCNN(nn.Module):
     def __init__(self, alphabet_size, embedding_dim, hidden_dim, dropout, gpu):

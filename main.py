@@ -328,13 +328,13 @@ def train(data, save_model_dir, seg=True):
             torch.save(model.state_dict(), model_name)
             best_dev = current_score 
         # ## decode test
-        speed, acc, p, r, f, _ = evaluate(data, model, "test")
-        test_finish = time.time()
-        test_cost = test_finish - dev_finish
-        if seg:
-            print(("Test: time: %.2fs, speed: %.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%(test_cost, speed, acc, p, r, f)))
-        else:
-            print(("Test: time: %.2fs, speed: %.2fst/s; acc: %.4f"%(test_cost, speed, acc)))
+        # speed, acc, p, r, f, _ = evaluate(data, model, "test")
+        # test_finish = time.time()
+        # test_cost = test_finish - dev_finish
+        # if seg:
+        #     print(("Test: time: %.2fs, speed: %.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%(test_cost, speed, acc, p, r, f)))
+        # else:
+        #     print(("Test: time: %.2fs, speed: %.2fst/s; acc: %.4f"%(test_cost, speed, acc)))
         gc.collect() 
 
 
@@ -366,15 +366,16 @@ def load_model_decode(model_dir, data, name, gpu, seg=True):
 
 if __name__ == '__main__':
     char_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.uni.ite50.vec'
-    gaz_file = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'
+    # gaz_file = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'  # NER
+    gaz_file = '/data/nfsdata/nlp/embeddings/chinese/wiki/zh.wiki.bpe.vs200000.d50.w2v.txt'  # CWS
     savemodel = '/data/nfsdata/nlp/projects/resume_ner'
     parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
     parser.add_argument('--embedding',  help='Embedding for words', default='None')
     parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
     parser.add_argument('--savemodel', default=savemodel)
     parser.add_argument('--savedset', help='Dir of saved data setting', default=savemodel + '/save.dset')
-    parser.add_argument('--name', default='WeiboNER')
-    parser.add_argument('--mode', default='all')
+    parser.add_argument('--name', default='PKUCWS')
+    parser.add_argument('--mode', default='char')
     parser.add_argument('--data_dir', default='/data/nfsdata/nlp/datasets/sequence_labeling/CN_NER/')
     parser.add_argument('--extendalphabet', default="True")
     parser.add_argument('--raw') 
@@ -417,9 +418,12 @@ if __name__ == '__main__':
         data.HP_gpu = gpu
         data.HP_use_char = False
         data.HP_batch_size = 1
-        data.use_bigram = False
+        data.use_bigram = True # ner: False, cws: True
         data.gaz_dropout = 0.5
-        data.norm_gaz_emb = False
+        data.HP_lr = 0.01  # cws
+        data.HP_dropout = 0.5  # cws
+        data.HP_iteration = 50  # cws
+        data.norm_gaz_emb = True # ner: False, cws: True
         data.HP_fix_gaz_emb = False
         data_initialization(data, gaz_file, train_file, dev_file, test_file)
         data.generate_instance_with_gaz(train_file,'train')

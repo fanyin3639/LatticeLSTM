@@ -330,7 +330,7 @@ def load_pretrain_emb(embedding_path):
             if embedd_dim < 0:
                 embedd_dim = len(tokens) - 1
             else:
-                assert (embedd_dim + 1 == len(tokens))
+                assert (embedd_dim + 1 == len(tokens)), F'{embedd_dim, len(tokens), embedding_path, line} not match'
             embedd = np.empty([1, embedd_dim])
             embedd[:] = tokens[1:]
             # embedd_dict[tokens[0]] = embedd
