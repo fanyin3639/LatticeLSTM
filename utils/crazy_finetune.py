@@ -45,6 +45,7 @@ finetune_options = {
     'HP_glyph_output_size': [32],
     'HP_glyph_dropout': [0.7],
     'HP_glyph_cnn_dropout': [0.5],
+    'gpu_id': [0],
 }
 
 

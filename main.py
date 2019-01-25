@@ -32,6 +32,8 @@ parser.add_argument('--mode', type=str, default='char')
 parser.add_argument('--data_dir', type=str, default='/data/nfsdata/nlp/datasets/sequence_labeling/CN_NER/')
 parser.add_argument('--raw', type=str)
 parser.add_argument('--loadmodel', type=str)
+parser.add_argument('--gpu_id', type=int, default=0)
+
 parser.add_argument('--gaz_dropout', type=float, default=0.5)
 parser.add_argument('--HP_lr', type=float, default=0.01)
 parser.add_argument('--HP_dropout', type=float, default=0.5)
@@ -45,6 +47,7 @@ parser.add_argument('--HP_glyph_dropout', type=float, default=0.7)
 parser.add_argument('--HP_glyph_cnn_dropout', type=float, default=0.5)
 
 args = parser.parse_args()
+os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
 save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
 if not os.path.isdir(save_dir):
     os.mkdir(save_dir)

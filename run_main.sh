@@ -1,6 +1,5 @@
-# export CUDA_LAUNCH_BLOCKING=1
-export CUDA_VISIBLE_DEVICES=1
-python main.py
+export PYTHONPATH=$PWD
+python utils/crazy_finetune.py
 
 
 # python main.py --status decode \
