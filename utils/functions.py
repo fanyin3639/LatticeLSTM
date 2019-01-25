@@ -283,7 +283,7 @@ def read_instance_with_gaz_in_sentence(input_file, gaz, word_alphabet, biword_al
 
 def build_pretrain_embedding(embedding_path, word_alphabet, embedd_dim=100, norm=True):    
     embedd_dict = dict()
-    if embedding_path != None:
+    if embedding_path:
         embedd_dict, embedd_dim = load_pretrain_emb(embedding_path)
     scale = np.sqrt(3.0 / embedd_dim)
     pretrain_emb = np.empty([word_alphabet.size(), embedd_dim])

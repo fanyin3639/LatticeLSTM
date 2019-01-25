@@ -13,6 +13,7 @@ import pickle as pickle
 import random
 import sys
 import time
+import logging
 
 import numpy as np
 import torch
@@ -22,6 +23,7 @@ import torch.optim as optim
 from model.bilstmcrf import BiLSTMCRF as SeqModel
 from utils.data import Data
 from utils.metric import get_ner_fmeasure
+
 
 parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
 parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
@@ -43,7 +45,22 @@ parser.add_argument('--HP_glyph_dropout', type=float, default=0.7)
 parser.add_argument('--HP_glyph_cnn_dropout', type=float, default=0.5)
 
 args = parser.parse_args()
-print(args)
+save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
+if not os.path.isdir(save_dir):
+    os.mkdir(save_dir)
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler(os.path.join(save_dir, 'run.log'))
+fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(ch)
+logger.info(args)
 
 seed_num = 42
 random.seed(seed_num)
@@ -100,8 +117,8 @@ def recover_label(pred_variable, gold_variable, mask_variable, label_alphabet, w
     for idx in range(batch_size):
         pred = [label_alphabet.get_instance(pred_tag[idx][idy]) for idy in range(seq_len) if mask[idx][idy] != 0]
         gold = [label_alphabet.get_instance(gold_tag[idx][idy]) for idy in range(seq_len) if mask[idx][idy] != 0]
-        # print "p:",pred, pred_tag.tolist()
-        # print "g:", gold, gold_tag.tolist()
+        # logger.info "p:",pred, pred_tag.tolist()
+        # logger.info "g:", gold, gold_tag.tolist()
         assert(len(pred)==len(gold))
         pred_label.append(pred)
         gold_label.append(gold)
@@ -121,20 +138,20 @@ def save_data_setting(data, save_file):
     new_data.raw_Ids = []
     with open(save_file, 'wb') as fp:
         pickle.dump(new_data, fp)
-    print("Data setting saved to file: ", save_file)
+    logger.info("Data setting saved to file: " + save_file)
 
 
 def load_data_setting(save_dir):
     with open(os.path.join(save_dir, 'data.set'), 'rb') as fp:
         data = pickle.load(fp)
-    print("Data setting loaded from file: ", save_dir)
+    logger.info("Data setting loaded from file: " + save_dir)
     data.show_data_summary()
     return data
 
 
 def lr_decay(optimizer, epoch, decay_rate, init_lr):
     lr = init_lr * ((1-decay_rate)**epoch)
-    print(" Learning rate is setted as:", lr)
+    logger.info(" Learning rate is setted as:" + lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return optimizer
@@ -150,7 +167,7 @@ def evaluate(data, model, name):
     elif name == 'raw':
         instances = data.raw_Ids
     else:
-        print("Error: wrong evaluate name,", name)
+        logger.info("Error: wrong evaluate name," + name)
     right_token = 0
     whole_token = 0
     pred_results = []
@@ -172,7 +189,7 @@ def evaluate(data, model, name):
             continue
         gaz_list, batch_word, batch_biword, batch_wordlen, batch_wordrecover, batch_char, batch_charlen, batch_charrecover, batch_label, mask  = batchify_with_label(instance, data.HP_gpu, True)
         tag_seq = model(gaz_list,batch_word, batch_biword, batch_wordlen, batch_char, batch_charlen, batch_charrecover, mask)
-        # print("tag_seq", tag_seq)
+        # logger.info("tag_seq", tag_seq)
         pred_label, gold_label = recover_label(tag_seq, batch_label, mask, data.label_alphabet, batch_wordrecover)
         pred_results += pred_label
         gold_results += gold_label
@@ -229,7 +246,7 @@ def batchify_with_label(input_batch_list, gpu, volatile_flag=False):
     char_seq_lengths = torch.LongTensor(length_list)
     for idx, (seq, seqlen) in enumerate(zip(pad_chars, char_seq_lengths)):
         for idy, (word, wordlen) in enumerate(zip(seq, seqlen)):
-            # print len(word), wordlen
+            # logger.info len(word), wordlen
             char_seq_tensor[idx, idy, :wordlen] = torch.LongTensor(word)
     char_seq_tensor = char_seq_tensor[word_perm_idx].view(batch_size*max_seq_len,-1)
     char_seq_lengths = char_seq_lengths[word_perm_idx].view(batch_size*max_seq_len,)
@@ -255,10 +272,10 @@ def batchify_with_label(input_batch_list, gpu, volatile_flag=False):
 
 
 def train(data, save_model_dir, seg=True):
-    print("Training model...")
+    logger.info("Training model...")
     data.show_data_summary()
     model = SeqModel(data)
-    print("finished built model.")
+    logger.info("finished built model.")
     parameters = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.SGD(parameters, lr=data.HP_lr, momentum=data.HP_momentum)
     best_dev = -1
@@ -267,7 +284,7 @@ def train(data, save_model_dir, seg=True):
     for idx in range(data.HP_iteration):
         epoch_start = time.time()
         temp_start = epoch_start
-        print(("Epoch: %s/%s" %(idx,data.HP_iteration)))
+        logger.info(("Epoch: %s/%s" %(idx,data.HP_iteration)))
         optimizer = lr_decay(optimizer, idx, data.HP_lr_decay, data.HP_lr)
         instance_count = 0
         sample_loss = 0
@@ -301,7 +318,7 @@ def train(data, save_model_dir, seg=True):
                 temp_time = time.time()
                 temp_cost = temp_time - temp_start
                 temp_start = temp_time
-                print(("     Instance: %s; Time: %.2fs; loss: %.4f; acc: %s/%s=%.4f" % (end, temp_cost, sample_loss, right_token, whole_token,(right_token+0.)/whole_token)))
+                logger.info(("     Instance: %s; Time: %.2fs; loss: %.4f; acc: %s/%s=%.4f" % (end, temp_cost, sample_loss, right_token, whole_token,(right_token+0.)/whole_token)))
                 sys.stdout.flush()
                 sample_loss = 0
             if end % data.HP_batch_size == 0:
@@ -311,26 +328,26 @@ def train(data, save_model_dir, seg=True):
                 batch_loss = 0
         temp_time = time.time()
         temp_cost = temp_time - temp_start
-        print(("     Instance: %s; Time: %.2fs; loss: %.4f; acc: %s/%s=%.4f" % (end, temp_cost, sample_loss, right_token, whole_token,(right_token+0.)/whole_token)))
+        logger.info(("     Instance: %s; Time: %.2fs; loss: %.4f; acc: %s/%s=%.4f" % (end, temp_cost, sample_loss, right_token, whole_token,(right_token+0.)/whole_token)))
         epoch_finish = time.time()
         epoch_cost = epoch_finish - epoch_start
-        print(("Epoch: %s training finished. Time: %.2fs, speed: %.2fst/s,  total loss: %s" % (idx, epoch_cost, train_num/epoch_cost, total_loss)))
+        logger.info(("Epoch: %s training finished. Time: %.2fs, speed: %.2fst/s,  total loss: %s" % (idx, epoch_cost, train_num/epoch_cost, total_loss)))
         speed, acc, p, r, f, _ = evaluate(data, model, "dev")
         dev_finish = time.time()
         dev_cost = dev_finish - epoch_finish
 
         if seg:
             current_score = f
-            print(("Dev: time: %.2fs, speed: %.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f" % (dev_cost, speed, acc, p, r, f)))
+            logger.info(("Dev: time: %.2fs, speed: %.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f" % (dev_cost, speed, acc, p, r, f)))
         else:
             current_score = acc
-            print(("Dev: time: %.2fs speed: %.2fst/s; acc: %.4f"%(dev_cost, speed, acc)))
+            logger.info(("Dev: time: %.2fs speed: %.2fst/s; acc: %.4f"%(dev_cost, speed, acc)))
 
         if current_score > best_dev:
             if seg:
-                print("Exceed previous best f score:", best_dev)
+                logger.info("Exceed previous best f score:" + best_dev)
             else:
-                print("Exceed previous best acc score:", best_dev)
+                logger.info("Exceed previous best acc score:" + best_dev)
             model_name = save_model_dir + '.' + str(idx) + ".model"
             torch.save(model.state_dict(), model_name)
             best_dev = current_score 
@@ -339,31 +356,31 @@ def train(data, save_model_dir, seg=True):
         # test_finish = time.time()
         # test_cost = test_finish - dev_finish
         # if seg:
-        #     print(("Test: time: %.2fs, speed: %.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%(test_cost, speed, acc, p, r, f)))
+        #     logger.info(("Test: time: %.2fs, speed: %.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%(test_cost, speed, acc, p, r, f)))
         # else:
-        #     print(("Test: time: %.2fs, speed: %.2fst/s; acc: %.4f"%(test_cost, speed, acc)))
+        #     logger.info(("Test: time: %.2fs, speed: %.2fst/s; acc: %.4f"%(test_cost, speed, acc)))
         gc.collect() 
 
 
 def load_model_decode(save_dir, data, name, seg=True):
-    print("Load Model from file: ", save_dir)
+    logger.info("Load Model from file: " + save_dir)
     model = SeqModel(data)
     model.load_state_dict(torch.load(save_dir))
-    print(F"Decode {name} data ...")
+    logger.info(F"Decode {name} data ...")
     start_time = time.time()
     speed, acc, p, r, f, pred_results = evaluate(data, model, name)
     end_time = time.time()
     time_cost = end_time - start_time
     if seg:
-        print(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%(name, time_cost, speed, acc, p, r, f)))
+        logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%(name, time_cost, speed, acc, p, r, f)))
     else:
-        print(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f"%(name, time_cost, speed, acc)))
+        logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f"%(name, time_cost, speed, acc)))
     return pred_results
 
 
 if __name__ == '__main__':
     char_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.uni.ite50.vec'
-    bichar_emb = None
+    bichar_emb = ''
     # bichar_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.bi.ite50.vec'
     # gaz_file = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'  # NER
     gaz_file = '/data/nfsdata/nlp/embeddings/chinese/wiki/zh.wiki.bpe.vs200000.d50.w2v.txt'  # CWS
@@ -371,18 +388,14 @@ if __name__ == '__main__':
     train_file = F'{args.data_dir}/{args.name}/train.{args.mode}.bmes'
     dev_file = F'{args.data_dir}/{args.name}/dev.{args.mode}.bmes'
     test_file = F'{args.data_dir}/{args.name}/test.{args.mode}.bmes'
-    save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
-    if not os.path.isdir(save_dir):
-        os.mkdir(save_dir)
-    print("Status:", args.status)
-    print("Train file:", train_file)
-    print("Dev file:", dev_file)
-    print("Test file:", test_file)
-    print("Raw file:", args.raw)
-    print("Char emb:", char_emb)
-    print("Bichar emb:", bichar_emb)
-    print("Gaz file:", gaz_file)
-    print("Save dir:", save_dir)
+    
+    logger.info("Train file:" + train_file)
+    logger.info("Dev file:" + dev_file)
+    logger.info("Test file:" + test_file)
+    logger.info("Char emb:" + char_emb)
+    logger.info("Bichar emb:" + bichar_emb)
+    logger.info("Gaz file:" + gaz_file)
+    logger.info("Save dir:" + save_dir)
     sys.stdout.flush()
     
     if args.status == 'train':
@@ -428,4 +441,4 @@ if __name__ == '__main__':
         decode_results = load_model_decode(args.loadmodel + '/saved.model', data, 'raw')
         data.write_decoded_results(args.loadmodel + '/decoded.output', decode_results, 'raw')
     else:
-        print("Invalid argument! Please use valid arguments! (train/test/decode)")
+        logger.info("Invalid argument! Please use valid arguments! (train/test/decode)")
