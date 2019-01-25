@@ -32,8 +32,8 @@ logger.addHandler(ch)
 
 # list里的第一个元素是默认设置
 finetune_options = {
-    'name': ['WeiboNER'],
-    'mode': ['all'],
+    'name': ['UD1POS'],
+    'mode': ['char'],
     'gaz_dropout': [0.5],
     'HP_lr': [0.01],
     'HP_dropout': [0.5],

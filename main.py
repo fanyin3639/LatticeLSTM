@@ -51,7 +51,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
 save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
 if not os.path.isdir(save_dir):
     os.mkdir(save_dir)
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger()  # pylint: disable=invalid-name
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler(os.path.join(save_dir, 'run.log'))
 fh.setLevel(logging.DEBUG)
@@ -171,22 +171,18 @@ def evaluate(data, model, name):
         instances = data.raw_Ids
     else:
         logger.info("Error: wrong evaluate name," + name)
-    right_token = 0
-    whole_token = 0
     pred_results = []
     gold_results = []
-    ## set model in eval model
     model.eval()
-    batch_size = 1
     start_time = time.time()
     train_num = len(instances)
-    total_batch = train_num//batch_size+1
+    total_batch = train_num//data.HP_batch_size+1
 
     for batch_id in range(total_batch):
-        start = batch_id*batch_size
-        end = (batch_id+1)*batch_size 
-        if end >train_num:
-            end =  train_num
+        start = batch_id*data.HP_batch_size
+        end = (batch_id+1)*data.HP_batch_size
+        if end > train_num:
+            end = train_num
         instance = instances[start:end]
         if not instance:
             continue
@@ -298,12 +294,11 @@ def train(data, save_model_dir, seg=True):
         random.shuffle(data.train_Ids)
         model.train()
         model.zero_grad()
-        batch_size = 1
         train_num = len(data.train_Ids)
-        total_batch = train_num//batch_size+1
+        total_batch = train_num//data.HP_batch_size+1
         for batch_id in range(total_batch):
-            start = batch_id*batch_size
-            end = min((batch_id+1)*batch_size, train_num)
+            start = batch_id*data.HP_batch_size
+            end = min((batch_id+1)*data.HP_batch_size, train_num)
             instance = data.train_Ids[start:end]
             if not instance:
                 continue
@@ -404,7 +399,6 @@ if __name__ == '__main__':
     if args.status == 'train':
         data = Data()
         data.HP_use_char = False
-        data.HP_batch_size = 1
         data.use_bigram = True  # ner: False, cws: True
         data.gaz_dropout = args.gaz_dropout
         data.HP_lr = args.HP_lr  # cws
