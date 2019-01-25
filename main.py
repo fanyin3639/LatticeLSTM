@@ -23,6 +23,28 @@ from model.bilstmcrf import BiLSTMCRF as SeqModel
 from utils.data import Data
 from utils.metric import get_ner_fmeasure
 
+parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
+parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
+parser.add_argument('--name', type=str, default='CTB9POS')
+parser.add_argument('--mode', type=str, default='char')
+parser.add_argument('--data_dir', type=str, default='/data/nfsdata/nlp/datasets/sequence_labeling/CN_NER/')
+parser.add_argument('--raw', type=str)
+parser.add_argument('--loadmodel', type=str)
+parser.add_argument('--gaz_dropout', type=float, default=0.5)
+parser.add_argument('--HP_lr', type=float, default=0.01)
+parser.add_argument('--HP_dropout', type=float, default=0.5)
+parser.add_argument('--HP_use_glyph', action='store_true')
+parser.add_argument('--HP_glyph_ratio', type=float, default=0.1)
+parser.add_argument('--HP_font_channels', type=int, default=2)
+parser.add_argument('--HP_glyph_highway', action='store_true')
+parser.add_argument('--HP_glyph_embsize', type=int, default=32)
+parser.add_argument('--HP_glyph_output_size', type=int, default=32)
+parser.add_argument('--HP_glyph_dropout', type=float, default=0.7)
+parser.add_argument('--HP_glyph_cnn_dropout', type=float, default=0.5)
+
+args = parser.parse_args()
+print(args)
+
 seed_num = 42
 random.seed(seed_num)
 torch.manual_seed(seed_num)
@@ -345,15 +367,7 @@ if __name__ == '__main__':
     # bichar_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.bi.ite50.vec'
     # gaz_file = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'  # NER
     gaz_file = '/data/nfsdata/nlp/embeddings/chinese/wiki/zh.wiki.bpe.vs200000.d50.w2v.txt'  # CWS
-    parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
-    parser.add_argument('--embedding',  help='Embedding for words', default='None')
-    parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
-    parser.add_argument('--name', default='CTB9POS')
-    parser.add_argument('--mode', default='char')
-    parser.add_argument('--data_dir', default='/data/nfsdata/nlp/datasets/sequence_labeling/CN_NER/')
-    parser.add_argument('--raw')
-    parser.add_argument('--loadmodel')
-    args = parser.parse_args()
+
     train_file = F'{args.data_dir}/{args.name}/train.{args.mode}.bmes'
     dev_file = F'{args.data_dir}/{args.name}/dev.{args.mode}.bmes'
     test_file = F'{args.data_dir}/{args.name}/test.{args.mode}.bmes'
@@ -367,7 +381,7 @@ if __name__ == '__main__':
     print("Raw file:", args.raw)
     print("Char emb:", char_emb)
     print("Bichar emb:", bichar_emb)
-    print("Gaz file:",gaz_file)
+    print("Gaz file:", gaz_file)
     print("Save dir:", save_dir)
     sys.stdout.flush()
     
@@ -376,11 +390,21 @@ if __name__ == '__main__':
         data.HP_use_char = False
         data.HP_batch_size = 1
         data.use_bigram = True  # ner: False, cws: True
-        data.gaz_dropout = 0.5
-        data.HP_lr = 0.01  # cws
-        data.HP_dropout = 0.5  # cws
+        data.gaz_dropout = args.gaz_dropout
+        data.HP_lr = args.HP_lr  # cws
+        data.HP_dropout = args.HP_dropout  # cws
+        data.HP_use_glyph = args.HP_use_glyph
+        data.HP_glyph_ratio = args.HP_glyph_ratio
+        data.HP_font_channels = args.HP_font_channels
+        data.HP_glyph_highway = args.HP_glyph_highway
+        data.HP_glyph_embsize = args.HP_glyph_embsize
+        data.HP_glyph_output_size = args.HP_glyph_output_size
+        data.HP_glyph_dropout = args.HP_glyph_dropout
+        data.HP_glyph_cnn_dropout = args.HP_glyph_cnn_dropout
+
         data.HP_iteration = 50  # cws
-        data.norm_gaz_emb = True # ner: False, cws: True
+        data.norm_gaz_emb = True  # ner: False, cws: True
+
         data.HP_fix_gaz_emb = False
         data_initialization(data, gaz_file, train_file, dev_file, test_file)
         data.generate_instance_with_gaz(train_file, 'train')
