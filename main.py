@@ -45,10 +45,12 @@ parser.add_argument('--HP_glyph_embsize', type=int, default=32)
 parser.add_argument('--HP_glyph_output_size', type=int, default=32)
 parser.add_argument('--HP_glyph_dropout', type=float, default=0.7)
 parser.add_argument('--HP_glyph_cnn_dropout', type=float, default=0.5)
+parser.add_argument('--command', type=str)
 
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
+# save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
+save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{args.command}'
 if not os.path.isdir(save_dir):
     os.mkdir(save_dir)
 logger = logging.getLogger()  # pylint: disable=invalid-name
