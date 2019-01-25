@@ -151,7 +151,7 @@ def load_data_setting(save_dir):
 
 def lr_decay(optimizer, epoch, decay_rate, init_lr):
     lr = init_lr * ((1-decay_rate)**epoch)
-    logger.info(" Learning rate is setted as:" + lr)
+    logger.info(F" Learning rate is setted as: {lr}")
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return optimizer
@@ -345,9 +345,9 @@ def train(data, save_model_dir, seg=True):
 
         if current_score > best_dev:
             if seg:
-                logger.info("Exceed previous best f score:" + best_dev)
+                logger.info(F"Exceed previous best f score: {best_dev}")
             else:
-                logger.info("Exceed previous best acc score:" + best_dev)
+                logger.info(F"Exceed previous best acc score: {best_dev}")
             model_name = save_model_dir + '.' + str(idx) + ".model"
             torch.save(model.state_dict(), model_name)
             best_dev = current_score 
