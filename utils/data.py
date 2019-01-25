@@ -66,7 +66,7 @@ class Data(object):
 
         #  hyperparameters
         self.HP_iteration = 100
-        self.HP_batch_size = 100
+        self.HP_batch_size = 1
         self.HP_char_hidden_dim = 50
         self.HP_hidden_dim = 200
         self.HP_dropout = 0.5
