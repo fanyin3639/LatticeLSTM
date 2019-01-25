@@ -6,22 +6,22 @@
 
 import argparse
 import copy
+import datetime
 import gc
+import os
 import pickle as pickle
 import random
 import sys
 import time
-import os
+
 import numpy as np
 import torch
 import torch.autograd as autograd
-import torch.nn as nn
 import torch.optim as optim
-import datetime
 
 from model.bilstmcrf import BiLSTMCRF as SeqModel
-from utils.metric import get_ner_fmeasure
 from utils.data import Data
+from utils.metric import get_ner_fmeasure
 
 seed_num = 42
 random.seed(seed_num)
@@ -341,13 +341,14 @@ def load_model_decode(save_dir, data, name, seg=True):
 
 if __name__ == '__main__':
     char_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.uni.ite50.vec'
-    bichar_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.bi.ite50.vec'
+    bichar_emb = None
+    # bichar_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.bi.ite50.vec'
     # gaz_file = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'  # NER
     gaz_file = '/data/nfsdata/nlp/embeddings/chinese/wiki/zh.wiki.bpe.vs200000.d50.w2v.txt'  # CWS
     parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
     parser.add_argument('--embedding',  help='Embedding for words', default='None')
     parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
-    parser.add_argument('--name', default='PKUCWS')
+    parser.add_argument('--name', default='CTB9POS')
     parser.add_argument('--mode', default='char')
     parser.add_argument('--data_dir', default='/data/nfsdata/nlp/datasets/sequence_labeling/CN_NER/')
     parser.add_argument('--raw')
@@ -357,7 +358,8 @@ if __name__ == '__main__':
     dev_file = F'{args.data_dir}/{args.name}/dev.{args.mode}.bmes'
     test_file = F'{args.data_dir}/{args.name}/test.{args.mode}.bmes'
     save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
-
+    if not os.path.isdir(save_dir):
+        os.mkdir(save_dir)
     print("Status:", args.status)
     print("Train file:", train_file)
     print("Dev file:", dev_file)
