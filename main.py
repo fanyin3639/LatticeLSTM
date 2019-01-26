@@ -42,14 +42,15 @@ parser.add_argument('--HP_glyph_embsize', type=int, default=32)
 parser.add_argument('--HP_glyph_output_size', type=int, default=32)
 parser.add_argument('--HP_glyph_dropout', type=float, default=0.7)
 parser.add_argument('--HP_glyph_cnn_dropout', type=float, default=0.5)
-parser.add_argument('--command', type=str)
+parser.add_argument('--setting_str', type=str, default='')
+parser.add_argument('--src_folder', type=str, default='/data/nfsdata/nlp/projects/wuwei')
 
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-save_dir = F'/train_data/{args.name}.{args.mode}.{args.command}.' \
-           F'{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
+save_dir = F'{args.src_folder}/{args.setting_str}.'
+
 if not os.path.isdir(save_dir):
-    os.mkdir(save_dir)
+    os.makedirs(save_dir)
 logger = logging.getLogger()  # pylint: disable=invalid-name
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler(os.path.join(save_dir, 'run.log'))
