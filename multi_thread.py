@@ -15,8 +15,8 @@ from pynvml import *
 from utils.crazy_finetune import *
 options = {
     'name': ['CTB5POS', 'CTB6CWS', 'CTB6POS', 'CTB9POS', 'MSRANER', 'MSRCWS', 'NLPCCCWS', 'OntoNote4NER', 'PKUCWS',
-             'ResumeNER', 'UD1POS', 'WeiboNER'],
-    'mode': ['all'],
+             'ResumeNER', 'UD1POS'],
+    'mode': ['char'],
     'gaz_dropout': [0.5],
     'HP_lr': [0.01],
     'HP_dropout': [0.5, 0.3],

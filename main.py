@@ -5,15 +5,13 @@
 # @Last Modified time: 2018-07-06 11:08:27
 
 import argparse
-import copy
 import datetime
 import gc
+import logging
 import os
-import pickle as pickle
 import random
 import sys
 import time
-import logging
 
 import numpy as np
 import torch
@@ -23,7 +21,6 @@ import torch.optim as optim
 from model.bilstmcrf import BiLSTMCRF as SeqModel
 from utils.data import Data
 from utils.metric import get_ner_fmeasure
-
 
 parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
 parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
