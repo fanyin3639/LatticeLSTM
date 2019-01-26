@@ -41,6 +41,8 @@ class BiLSTM(nn.Module):
         if self.use_glyph:
             self.glyph_config = GlyphEmbeddingConfig()
             self.glyph_config.char_embsize = 0
+            self.glyph_config.use_batch_norm = data.HP_glyph_batchnorm
+            self.glyph_config.use_layer_norm = data.HP_glyph_layernorm
             self.glyph_config.glyph_embsize = data.HP_glyph_embsize
             self.glyph_config.font_channels = data.HP_font_channels
             self.glyph_config.output_size = data.HP_glyph_output_size

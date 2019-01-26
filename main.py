@@ -38,8 +38,10 @@ parser.add_argument('--HP_use_glyph', action='store_true')
 parser.add_argument('--HP_glyph_ratio', type=float, default=0.1)
 parser.add_argument('--HP_font_channels', type=int, default=2)
 parser.add_argument('--HP_glyph_highway', action='store_true')
-parser.add_argument('--HP_glyph_embsize', type=int, default=32)
-parser.add_argument('--HP_glyph_output_size', type=int, default=32)
+parser.add_argument('--HP_glyph_layernorm', action='store_true')
+parser.add_argument('--HP_glyph_batchnorm', action='store_true')
+parser.add_argument('--HP_glyph_embsize', type=int, default=64)
+parser.add_argument('--HP_glyph_output_size', type=int, default=64)
 parser.add_argument('--HP_glyph_dropout', type=float, default=0.7)
 parser.add_argument('--HP_glyph_cnn_dropout', type=float, default=0.5)
 parser.add_argument('--setting_str', type=str, default='')
@@ -399,6 +401,8 @@ if __name__ == '__main__':
         data.HP_glyph_output_size = args.HP_glyph_output_size
         data.HP_glyph_dropout = args.HP_glyph_dropout
         data.HP_glyph_cnn_dropout = args.HP_glyph_cnn_dropout
+        data.HP_glyph_batchnorm = args.HP_glyph_batchnorm
+        data.HP_glyph_layernorm = args.HP_glyph_layernorm
         data.norm_gaz_emb = False if 'NER' in args.name else True  # ner: False, cws: True
 
         data.HP_fix_gaz_emb = False
