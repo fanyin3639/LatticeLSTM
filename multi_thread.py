@@ -18,7 +18,7 @@ options = {
              'ResumeNER', 'UD1POS', 'WeiboNER'],
     'mode': ['all'],
     'gaz_dropout': [0.5],
-    'HP_lr': [0.01, 0.005, 0.001],
+    'HP_lr': [0.01],
     'HP_dropout': [0.5, 0.3],
     'HP_use_glyph': [True],
     'HP_glyph_ratio': [0.1, 0.01, 0.001],
@@ -26,8 +26,8 @@ options = {
     'HP_glyph_highway': [False],
     'HP_glyph_embsize': [64],
     'HP_glyph_output_size': [64],
-    'HP_glyph_dropout': [0.5],
-    'HP_glyph_cnn_dropout': [0.5],
+    'HP_glyph_dropout': [0.5, 0.3],
+    'HP_glyph_cnn_dropout': [0.5, 0.3],
 }
 
 
@@ -41,10 +41,12 @@ def judge_free_gpu(id):
 
 
 def get_free_gpu_id_and_update(usage_list):
+    useable = [10, 11, 12, 13, 14, 15]
     for i, a in enumerate(usage_list):
-        if a < 3 and judge_free_gpu(i):
-            usage_list[i] += 1
-            return i
+        if i in useable:
+            if a < 3 and judge_free_gpu(i):
+                usage_list[i] += 1
+                return i
     return -1
 
 
