@@ -9,17 +9,17 @@
 
 from multiprocessing import Process, Manager, Lock
 from time import sleep
-
+from collections import OrderedDict
 from pynvml import *
 
 from utils.crazy_finetune import *
 import re
 
 # src_folder会在/data/nfsdata/nlp/projects底下创建树根
-src_folder = 'MUYUWEIBO'
+src_folder = '/data/nfsdata/nlp/projects/'
 
 # 选择GPU的策略，大于下述数值才会选择 (MB)
-min_gpu_free_mem = 3500
+min_gpu_free_mem = 3000
 
 # 选择GPU的策略，GPU上面的进程数目小于下述数值才会选择
 max_gpu_process = 5
@@ -30,16 +30,15 @@ max_mine_process = 5
 # 使用的GPU编号
 gpus = [0]
 
-options = {
-    'name': ['UD1POS'],
-    'HP_dropout': [0.5, 0.4, 0.6],
-    'HP_use_glyph': [True],
-    'HP_glyph_ratio': [0.1, 0.2, 0.01, 0.001],
-    'HP_font_channels': [2, 1, 4, 8],
-    'HP_glyph_cnn_dropout': [0.7, 0.5, 0.3],
-    'HP_glyph_batchnorm': [False, True],
-    'HP_glyph_layernorm': [False, True],
-}
+options = OrderedDict()
+options['name'] = ['UD1POS']
+options['HP_dropout'] = [0.5, 0.4, 0.6]
+options['HP_use_glyph'] = [True]
+options['HP_glyph_ratio'] = [0.1, 0.2, 0.01, 0.001]
+options['HP_font_channels'] = [2, 1, 4, 8]
+options['HP_glyph_cnn_dropout'] = [0.7, 0.5, 0.3]
+options['HP_glyph_batchnorm'] = [False, True]
+options['HP_glyph_layernorm'] = [False, True]
 
 
 def judge_free_gpu(id):
@@ -107,7 +106,7 @@ def grid_search():
 
 def traverse():
     """以默认配置为基准，每次只调一个参数，m个参数，每个参数n个选项，总共运行m*(n-1)次"""
-    commands = []
+    settings = []
     nvmlInit()
     deviceCount = nvmlDeviceGetCount()
     gpu_usage_list = Manager().list([0 for i in range(deviceCount)])
@@ -119,17 +118,17 @@ def traverse():
             if i and default_setting[feature] != option:  # 默认设置
                 setting = default_setting
                 setting[feature] = option
-                command = construct_command(setting)
-                commands.append(command)
-    for c in commands:
-        logger.info(F'commands: {c}')
+                # command = construct_command(setting)
+                settings.append(setting)
+    for s in settings:
+        logger.info(F'settings: {s}')
 
-    while commands:
+    while settings:
         lock.acquire()
         gpu_id = get_free_gpu_id_and_update(gpu_usage_list)
         if gpu_id != -1:
-            setting = {}
-            command = commands.pop()
+            setting = settings.pop()
+            command = construct_command(setting)
             setting_str = re.sub(r"[\'\{\}\s]", '', str(setting))
             setting_str = setting_str.replace(',', '/').replace(':', '.')
             P = Process(target=pao, args=(gpu_id, command, setting_str))
