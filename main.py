@@ -130,25 +130,9 @@ def recover_label(pred_variable, gold_variable, mask_variable, label_alphabet, w
     return pred_label, gold_label
 
 
-def save_data_setting(data, save_file):
-    new_data = copy.deepcopy(data)
-    new_data.train_texts = []
-    new_data.dev_texts = []
-    new_data.test_texts = []
-    new_data.raw_texts = []
-
-    new_data.train_Ids = []
-    new_data.dev_Ids = []
-    new_data.test_Ids = []
-    new_data.raw_Ids = []
-    with open(save_file, 'wb') as fp:
-        pickle.dump(new_data, fp)
-    logger.info("Data setting saved to file: " + save_file)
-
-
 def load_data_setting(save_dir):
     with open(save_dir, 'rb') as fp:
-        data = pickle.load(fp)
+        data = torch.load(fp)
     logger.info("Data setting loaded from file: " + save_dir)
     data.show_data_summary()
     return data
