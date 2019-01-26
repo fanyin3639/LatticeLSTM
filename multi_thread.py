@@ -41,7 +41,6 @@ options['HP_use_glyph'] = [True]
 options['HP_glyph_ratio'] = [0.1, 0.2, 0.01, 0.001]
 options['HP_font_channels'] = [2, 1, 4, 8]
 options['HP_glyph_cnn_dropout'] = [0.7, 0.5, 0.3]
-options['HP_glyph_batchnorm'] = [False, True]
 
 
 def judge_free_gpu(id):
