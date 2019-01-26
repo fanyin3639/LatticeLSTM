@@ -27,6 +27,10 @@ max_gpu_process = 5
 # 在每一块GPU上最多并发跑这个程序的数量
 max_mine_process = 5
 
+nvmlInit()
+deviceCount = nvmlDeviceGetCount()
+gpu_usage_list = Manager().list([0 for i in range(deviceCount)])
+
 # 使用的GPU编号
 gpus = [0]
 
@@ -80,9 +84,6 @@ def pao(gpu_id, command_in, setting_str):
 
 
 def grid_search():
-    nvmlInit()
-    deviceCount = nvmlDeviceGetCount()
-    gpu_usage_list = Manager().list([0 for i in range(deviceCount)])
     lock = Lock()
     params_list = list(product(*options.values()))
     while params_list:
@@ -107,9 +108,7 @@ def grid_search():
 def traverse():
     """以默认配置为基准，每次只调一个参数，m个参数，每个参数n个选项，总共运行m*(n-1)次"""
     settings = []
-    nvmlInit()
-    deviceCount = nvmlDeviceGetCount()
-    gpu_usage_list = Manager().list([0 for i in range(deviceCount)])
+
     lock = Lock()
     default_setting = {k: v[0] for k, v in options.items()}
     logger.info(F'default setting: {default_setting}')
