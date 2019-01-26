@@ -31,25 +31,9 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-# list里的第一个元素是默认设置
-# finetune_options = {
-#     'name': ['WeiboNER'],
-#     'mode': ['all'],
-#     'gaz_dropout': [0.5],
-#     'HP_lr': [0.01],
-#     'HP_dropout': [0.5],
-#     'HP_use_glyph': [True],
-#     'HP_glyph_ratio': [0.1, 0.001],
-#     'HP_font_channels': [2],
-#     'HP_glyph_highway': [False],
-#     'HP_glyph_embsize': [32],
-#     'HP_glyph_output_size': [32],
-#     'HP_glyph_dropout': [0.7],
-#     'HP_glyph_cnn_dropout': [0.5],
-#     'gpu_id': [0],
-# }
 
 finetune_options = {
+    'gpu_id': [1],
     'name': ['UD1POS'],
     'mode': ['char'],
     'gaz_dropout': [0.5],
@@ -63,7 +47,6 @@ finetune_options = {
     'HP_glyph_output_size': [64],
     'HP_glyph_dropout': [0.5],
     'HP_glyph_cnn_dropout': [0.5],
-    'gpu_id': [0],
 }
 
 def get_free_gpu_id():

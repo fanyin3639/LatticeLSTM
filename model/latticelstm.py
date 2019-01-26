@@ -179,7 +179,7 @@ class LatticeLSTM(nn.Module):
         self.hidden_dim = hidden_dim
         self.word_emb = nn.Embedding(word_alphabet_size, word_emb_dim)
         if pretrain_word_emb is not None:
-            logger.info("load pretrain word emb... {pretrain_word_emb.shape}")
+            logger.info(F"load pretrain word emb... {pretrain_word_emb.shape}")
             self.word_emb.weight.data.copy_(torch.from_numpy(pretrain_word_emb))
 
         else:

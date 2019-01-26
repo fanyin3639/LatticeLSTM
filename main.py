@@ -5,15 +5,13 @@
 # @Last Modified time: 2018-07-06 11:08:27
 
 import argparse
-import copy
 import datetime
 import gc
+import logging
 import os
-import pickle as pickle
 import random
 import sys
 import time
-import logging
 
 import numpy as np
 import torch
@@ -23,7 +21,6 @@ import torch.optim as optim
 from model.bilstmcrf import BiLSTMCRF as SeqModel
 from utils.data import Data
 from utils.metric import get_ner_fmeasure
-
 
 parser = argparse.ArgumentParser(description='Tuning with bi-directional LSTM-CRF')
 parser.add_argument('--status', choices=['train', 'test', 'decode'], help='update algorithm', default='train')
@@ -45,14 +42,15 @@ parser.add_argument('--HP_glyph_embsize', type=int, default=32)
 parser.add_argument('--HP_glyph_output_size', type=int, default=32)
 parser.add_argument('--HP_glyph_dropout', type=float, default=0.7)
 parser.add_argument('--HP_glyph_cnn_dropout', type=float, default=0.5)
-parser.add_argument('--command', type=str)
+parser.add_argument('--setting_str', type=str, default='')
+parser.add_argument('--src_folder', type=str, default='/data/nfsdata/nlp/projects/wuwei')
 
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-# save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
-save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{args.command}'
+save_dir = F'{args.src_folder}/{args.setting_str}.'
+
 if not os.path.isdir(save_dir):
-    os.mkdir(save_dir)
+    os.makedirs(save_dir)
 logger = logging.getLogger()  # pylint: disable=invalid-name
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler(os.path.join(save_dir, 'run.log'))
@@ -130,25 +128,9 @@ def recover_label(pred_variable, gold_variable, mask_variable, label_alphabet, w
     return pred_label, gold_label
 
 
-def save_data_setting(data, save_file):
-    new_data = copy.deepcopy(data)
-    new_data.train_texts = []
-    new_data.dev_texts = []
-    new_data.test_texts = []
-    new_data.raw_texts = []
-
-    new_data.train_Ids = []
-    new_data.dev_Ids = []
-    new_data.test_Ids = []
-    new_data.raw_Ids = []
-    with open(save_file, 'wb') as fp:
-        pickle.dump(new_data, fp)
-    logger.info("Data setting saved to file: " + save_file)
-
-
 def load_data_setting(save_dir):
-    with open(os.path.join(save_dir, 'data.set'), 'rb') as fp:
-        data = pickle.load(fp)
+    with open(save_dir, 'rb') as fp:
+        data = torch.load(fp)
     logger.info("Data setting loaded from file: " + save_dir)
     data.show_data_summary()
     return data
@@ -256,7 +238,7 @@ def batchify_with_label(input_batch_list, gpu, volatile_flag=False):
     _, char_seq_recover = char_perm_idx.sort(0, descending=False)
     _, word_seq_recover = word_perm_idx.sort(0, descending=False)
     
-    ## keep the gaz_list in orignial order
+    #  keep the gaz_list in orignial order
     
     gaz_list = [ gazs[i] for i in word_perm_idx]
     gaz_list.append(volatile_flag)
@@ -348,7 +330,7 @@ def train(data, save_model_dir, seg=True):
                 logger.info(F"Exceed previous best f score: {best_dev}")
             else:
                 logger.info(F"Exceed previous best acc score: {best_dev}")
-            model_name = save_model_dir + '.' + str(idx) + ".model"
+            model_name = os.path.join(save_model_dir, 'saved.model')
             torch.save(model.state_dict(), model_name)
             best_dev = current_score 
         # ## decode test
@@ -362,28 +344,32 @@ def train(data, save_model_dir, seg=True):
         gc.collect() 
 
 
-def load_model_decode(save_dir, data, name, seg=True):
+def load_model_decode(save_dir, data):
     logger.info("Load Model from file: " + save_dir)
     model = SeqModel(data)
     model.load_state_dict(torch.load(save_dir))
-    logger.info(F"Decode {name} data ...")
+    logger.info(F"Decode dev data ...")
     start_time = time.time()
-    speed, acc, p, r, f, pred_results = evaluate(data, model, name)
+    speed, acc, p, r, f, pred_results = evaluate(data, model, 'dev')
     end_time = time.time()
     time_cost = end_time - start_time
-    if seg:
-        logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%(name, time_cost, speed, acc, p, r, f)))
-    else:
-        logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f"%(name, time_cost, speed, acc)))
-    return pred_results
+    logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%('dev', time_cost, speed, acc, p, r, f)))
+
+    logger.info(F"Decode test data ...")
+    start_time = time.time()
+    speed, acc, p, r, f, pred_results = evaluate(data, model, 'test')
+    end_time = time.time()
+    time_cost = end_time - start_time
+    logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%('test', time_cost, speed, acc, p, r, f)))
 
 
 if __name__ == '__main__':
     char_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.uni.ite50.vec'
     bichar_emb = ''
     # bichar_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.bi.ite50.vec'
-    # gaz_file = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'  # NER
-    gaz_file = '/data/nfsdata/nlp/embeddings/chinese/wiki/zh.wiki.bpe.vs200000.d50.w2v.txt'  # CWS
+    ctb_gaz = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'  # NER
+    wiki_gaz = '/data/nfsdata/nlp/embeddings/chinese/wiki/zh.wiki.bpe.vs200000.d50.w2v.txt'
+    gaz_file = ctb_gaz if 'NER' in args.name else wiki_gaz
 
     train_file = F'{args.data_dir}/{args.name}/train.{args.mode}.bmes'
     dev_file = F'{args.data_dir}/{args.name}/dev.{args.mode}.bmes'
@@ -401,10 +387,10 @@ if __name__ == '__main__':
     if args.status == 'train':
         data = Data()
         data.HP_use_char = False
-        data.use_bigram = True  # ner: False, cws: True
+        data.use_bigram = False if 'NER' in args.name else True  # ner: False, cws: True
         data.gaz_dropout = args.gaz_dropout
-        data.HP_lr = args.HP_lr  # cws
-        data.HP_dropout = args.HP_dropout  # cws
+        data.HP_lr = 0.015 if 'NER' in args.name else 0.01
+        data.HP_dropout = args.HP_dropout
         data.HP_use_glyph = args.HP_use_glyph
         data.HP_glyph_ratio = args.HP_glyph_ratio
         data.HP_font_channels = args.HP_font_channels
@@ -413,9 +399,7 @@ if __name__ == '__main__':
         data.HP_glyph_output_size = args.HP_glyph_output_size
         data.HP_glyph_dropout = args.HP_glyph_dropout
         data.HP_glyph_cnn_dropout = args.HP_glyph_cnn_dropout
-
-        data.HP_iteration = 50  # cws
-        data.norm_gaz_emb = True  # ner: False, cws: True
+        data.norm_gaz_emb = False if 'NER' in args.name else True  # ner: False, cws: True
 
         data.HP_fix_gaz_emb = False
         data_initialization(data, gaz_file, train_file, dev_file, test_file)
@@ -430,14 +414,12 @@ if __name__ == '__main__':
         train(data, save_dir)
     elif args.status == 'test':
         data = load_data_setting(args.loadmodel + '/data.set')
-        data.generate_instance_with_gaz(dev_file, 'dev')
-        load_model_decode(args.loadmodel + '/saved.model', data, 'dev')
-        data.generate_instance_with_gaz(test_file, 'test')
-        load_model_decode(args.loadmodel + '/saved.model', data, 'test')
-    elif args.status == 'decode':
-        data = load_data_setting(args.loadmodel + '/data.set')
-        data.generate_instance_with_gaz(args.raw, 'raw')
-        decode_results = load_model_decode(args.loadmodel + '/saved.model', data, 'raw')
-        data.write_decoded_results(args.loadmodel + '/decoded.output', decode_results, 'raw')
+        load_model_decode(args.loadmodel + '/saved.model', data)
+        # load_model_decode(args.loadmodel + '/saved.model', data, 'test')
+    # elif args.status == 'decode':
+    #     data = load_data_setting(args.loadmodel + '/data.set')
+    #     data.generate_instance_with_gaz(args.raw, 'raw')
+    #     decode_results = load_model_decode(args.loadmodel + '/saved.model', data, 'raw')
+    #     data.write_decoded_results(args.loadmodel + '/decoded.output', decode_results, 'raw')
     else:
         logger.info("Invalid argument! Please use valid arguments! (train/test/decode)")

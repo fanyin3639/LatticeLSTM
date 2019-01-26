@@ -7,8 +7,8 @@ from .functions import *
 from .gazetteer import Gazetteer
 import logging
 
-START = "</s>"
-UNKNOWN = "</unk>"
+# START = "</s>"
+# UNKNOWN = "</unk>"
 PADDING = "</pad>"
 NULLKEY = "-null-"
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ class Data(object):
         self.label_alphabet_size = 0
 
         #  hyperparameters
-        self.HP_iteration = 100
+        self.HP_iteration = 50
         self.HP_batch_size = 1
         self.HP_char_hidden_dim = 50
         self.HP_hidden_dim = 200
