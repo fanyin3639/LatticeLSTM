@@ -1,10 +1,14 @@
 from .trie import Trie 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class Gazetteer:
     def __init__(self, lower):
         self.trie = Trie()
-        self.ent2type = {} ## word list to type
-        self.ent2id = {"<UNK>":0}   ## word list to id
+        self.ent2type = {}  # word list to type
+        self.ent2id = {"<UNK>": 0}  # word list to id
         self.lower = lower
         self.space = ""
 
@@ -38,7 +42,7 @@ class Gazetteer:
         string = self.space.join(word_list)
         if string in self.ent2type:
             return self.ent2type[string]
-        print("Error in finding entity type at gazetteer.py, exit program! String:", string)
+        logger.info(F"Error in finding entity type at gazetteer.py, exit program! String: {string}")
         exit(0)
 
     def size(self):

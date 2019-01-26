@@ -7,8 +7,8 @@ from .functions import *
 from .gazetteer import Gazetteer
 import logging
 
-START = "</s>"
-UNKNOWN = "</unk>"
+# START = "</s>"
+# UNKNOWN = "</unk>"
 PADDING = "</pad>"
 NULLKEY = "-null-"
 logger = logging.getLogger(__name__)

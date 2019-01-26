@@ -15,7 +15,7 @@ import os
 class Alphabet:
     def __init__(self, name, label=False, keep_growing=True):
         self.__name = name
-        self.UNKNOWN = "</unk>"
+        self.UNKNOWN = "<UNK>"
         self.label = label
         self.instance2index = {}
         self.instances = []

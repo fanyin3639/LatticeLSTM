@@ -147,7 +147,7 @@ def save_data_setting(data, save_file):
 
 
 def load_data_setting(save_dir):
-    with open(os.path.join(save_dir, 'data.set'), 'rb') as fp:
+    with open(save_dir, 'rb') as fp:
         data = pickle.load(fp)
     logger.info("Data setting loaded from file: " + save_dir)
     data.show_data_summary()

@@ -69,7 +69,7 @@ def read_instance(input_file, word_alphabet, char_alphabet, label_alphabet, numb
     return instence_texts, instence_Ids
 
 
-def read_seg_instance(input_file, word_alphabet, biword_alphabet, char_alphabet, label_alphabet, number_normalized, max_sent_length, char_padding_size=-1, char_padding_symbol = '</pad>'):
+def read_seg_instance(input_file, word_alphabet, biword_alphabet, char_alphabet, label_alphabet, number_normalized, max_sent_length, char_padding_size=-1, char_padding_symbol='</pad>'):
     in_lines = open(input_file,encoding="UTF-8").readlines()
     instence_texts = []
     instence_Ids = []
@@ -130,7 +130,7 @@ def read_seg_instance(input_file, word_alphabet, biword_alphabet, char_alphabet,
     return instence_texts, instence_Ids
 
 
-def read_instance_with_gaz(input_file, gaz, word_alphabet, biword_alphabet, char_alphabet, gaz_alphabet, label_alphabet, number_normalized, max_sent_length, char_padding_size=-1, char_padding_symbol = '</pad>'):
+def read_instance_with_gaz(input_file, gaz, word_alphabet, biword_alphabet, char_alphabet, gaz_alphabet, label_alphabet, number_normalized, max_sent_length, char_padding_size=-1, char_padding_symbol='</pad>'):
     in_lines = open(input_file,encoding="UTF-8").readlines()
     instence_texts = []
     instence_Ids = []

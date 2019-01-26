@@ -19,7 +19,6 @@ from .latticelstm import LatticeLSTM
 class BiLSTM(nn.Module):
     def __init__(self, data):
         super(BiLSTM, self).__init__()
-        print("build batched bilstm...")
         self.use_bigram = data.use_bigram
         self.use_glyph = data.HP_use_glyph
         self.gpu = data.HP_gpu
