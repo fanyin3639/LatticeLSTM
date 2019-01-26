@@ -49,7 +49,7 @@ parser.add_argument('--command', type=str)
 
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{args.command}.' \
+save_dir = F'/train_data/{args.name}.{args.mode}.{args.command}.' \
            F'{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
 if not os.path.isdir(save_dir):
     os.mkdir(save_dir)
