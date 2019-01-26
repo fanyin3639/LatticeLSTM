@@ -82,10 +82,12 @@ class Data(object):
         self.HP_glyph_ratio = 0.05
         self.HP_font_channels = 2
         self.HP_glyph_highway = False
-        self.HP_glyph_embsize = 32
-        self.HP_glyph_output_size = 32
+        self.HP_glyph_embsize = 64
+        self.HP_glyph_output_size = 64
         self.HP_glyph_dropout = 0.7
         self.HP_glyph_cnn_dropout = 0.5
+        self.HP_glyph_layernorm = False
+        self.HP_glyph_batchnorm = False
 
     def show_data_summary(self):
         logger.info("DATA SUMMARY START:")

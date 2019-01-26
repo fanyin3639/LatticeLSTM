@@ -25,24 +25,20 @@ min_gpu_free_mem = 3500
 max_gpu_process = 5
 
 # 在每一块GPU上最多并发跑这个程序的数量
-max_mine_process = 1
+max_mine_process = 5
 
 # 使用的GPU编号
-gpus = [2]
+gpus = [0]
 
 options = {
     'name': ['UD1POS'],
-    'mode': ['char'],
-    'gaz_dropout': [0.5],
-    'HP_lr': [0.01],
-    'HP_dropout': [0.5],
+    'HP_dropout': [0.5, 0.4, 0.6],
     'HP_use_glyph': [True],
-    'HP_glyph_ratio': [0.1, 0.01, 0.001],
-    'HP_font_channels': [1, 2, 4, 8],
-    'HP_glyph_highway': [False],
-    'HP_glyph_embsize': [64],
-    'HP_glyph_output_size': [64],
+    'HP_glyph_ratio': [0.1, 0.2, 0.01, 0.001],
+    'HP_font_channels': [2, 1, 4, 8],
     'HP_glyph_cnn_dropout': [0.7, 0.5, 0.3],
+    'HP_glyph_batchnorm': [False, True],
+    'HP_glyph_layernorm': [False, True],
 }
 
 
@@ -65,7 +61,7 @@ def get_free_gpu_id_and_update(usage_list):
 
 
 def pao(gpu_id, command_in, setting_str):
-    commandline = command + F' --gpu_id {gpu_id}' + F' --setting_str {setting_str}+PID.{os.getpid()}+PPID.{os.getppid()} --src_folder {src_folder}'
+    commandline = command_in + F' --gpu_id {gpu_id}' + F' --setting_str {setting_str}+PID.{os.getpid()}+PPID.{os.getppid()} --src_folder {src_folder}'
 
     print(commandline)
     print('=' * 70)
@@ -84,7 +80,7 @@ def pao(gpu_id, command_in, setting_str):
     locktmp.release()
 
 
-if __name__ == '__main__':
+def grid_search():
     nvmlInit()
     deviceCount = nvmlDeviceGetCount()
     gpu_usage_list = Manager().list([0 for i in range(deviceCount)])
@@ -107,3 +103,40 @@ if __name__ == '__main__':
             P.start()
         lock.release()
         sleep(1)
+
+
+def traverse():
+    """以默认配置为基准，每次只调一个参数，m个参数，每个参数n个选项，总共运行m*(n-1)次"""
+    commands = []
+    nvmlInit()
+    deviceCount = nvmlDeviceGetCount()
+    gpu_usage_list = Manager().list([0 for i in range(deviceCount)])
+    lock = Lock()
+    default_setting = {k: v[0] for k, v in options.items()}
+    logger.info(F'default setting: {default_setting}')
+    for feature in options:
+        for i, option in enumerate(options[feature]):
+            if i and default_setting[feature] != option:  # 默认设置
+                setting = default_setting
+                setting[feature] = option
+                command = construct_command(setting)
+                commands.append(command)
+    for c in commands:
+        logger.info(F'commands: {c}')
+
+    while commands:
+        lock.acquire()
+        gpu_id = get_free_gpu_id_and_update(gpu_usage_list)
+        if gpu_id != -1:
+            setting = {}
+            command = commands.pop()
+            setting_str = re.sub(r"[\'\{\}\s]", '', str(setting))
+            setting_str = setting_str.replace(',', '/').replace(':', '.')
+            P = Process(target=pao, args=(gpu_id, command, setting_str))
+            P.start()
+        lock.release()
+        sleep(1)
+
+
+if __name__ == '__main__':
+    traverse()
