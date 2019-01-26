@@ -49,8 +49,8 @@ parser.add_argument('--command', type=str)
 
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-# save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
-save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{args.command}'
+save_dir = F'/data/nfsdata/nlp/projects/{args.name}.{args.mode}.{args.command}.' \
+           F'{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}'
 if not os.path.isdir(save_dir):
     os.mkdir(save_dir)
 logger = logging.getLogger()  # pylint: disable=invalid-name
@@ -348,7 +348,7 @@ def train(data, save_model_dir, seg=True):
                 logger.info(F"Exceed previous best f score: {best_dev}")
             else:
                 logger.info(F"Exceed previous best acc score: {best_dev}")
-            model_name = save_model_dir + '.' + str(idx) + ".model"
+            model_name = os.path.join(save_model_dir, 'saved.model')
             torch.save(model.state_dict(), model_name)
             best_dev = current_score 
         # ## decode test
