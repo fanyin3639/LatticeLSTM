@@ -13,9 +13,9 @@ from time import sleep
 from pynvml import *
 
 from utils.crazy_finetune import *
-
 options = {
-    'name': ['WeiboNER'],
+    'name': ['CTB5POS', 'CTB6CWS', 'CTB6POS', 'CTB9POS', 'MSRANER', 'MSRCWS', 'NLPCCCWS', 'OntoNote4NER', 'PKUCWS',
+             'ResumeNER', 'UD1POS', 'WeiboNER'],
     'mode': ['all'],
     'gaz_dropout': [0.5],
     'HP_lr': [0.01, 0.005, 0.001],

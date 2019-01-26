@@ -240,7 +240,7 @@ def batchify_with_label(input_batch_list, gpu, volatile_flag=False):
     _, char_seq_recover = char_perm_idx.sort(0, descending=False)
     _, word_seq_recover = word_perm_idx.sort(0, descending=False)
     
-    ## keep the gaz_list in orignial order
+    #  keep the gaz_list in orignial order
     
     gaz_list = [ gazs[i] for i in word_perm_idx]
     gaz_list.append(volatile_flag)
