@@ -382,8 +382,9 @@ if __name__ == '__main__':
     char_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.uni.ite50.vec'
     bichar_emb = ''
     # bichar_emb = '/data/nfsdata/nlp/embeddings/chinese/gigaword/gigaword_chn.all.a2b.bi.ite50.vec'
-    # gaz_file = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'  # NER
-    gaz_file = '/data/nfsdata/nlp/embeddings/chinese/wiki/zh.wiki.bpe.vs200000.d50.w2v.txt'  # CWS
+    ctb_gaz = '/data/nfsdata/nlp/embeddings/chinese/ctb/ctb.50d.vec'  # NER
+    wiki_gaz = '/data/nfsdata/nlp/embeddings/chinese/wiki/zh.wiki.bpe.vs200000.d50.w2v.txt'
+    gaz_file = ctb_gaz if 'NER' in args.name else wiki_gaz
 
     train_file = F'{args.data_dir}/{args.name}/train.{args.mode}.bmes'
     dev_file = F'{args.data_dir}/{args.name}/dev.{args.mode}.bmes'
@@ -401,10 +402,10 @@ if __name__ == '__main__':
     if args.status == 'train':
         data = Data()
         data.HP_use_char = False
-        data.use_bigram = True  # ner: False, cws: True
+        data.use_bigram = False if 'NER' in args.name else True  # ner: False, cws: True
         data.gaz_dropout = args.gaz_dropout
-        data.HP_lr = args.HP_lr  # cws
-        data.HP_dropout = args.HP_dropout  # cws
+        data.HP_lr = 0.015 if 'NER' in args.name else 0.01
+        data.HP_dropout = args.HP_dropout
         data.HP_use_glyph = args.HP_use_glyph
         data.HP_glyph_ratio = args.HP_glyph_ratio
         data.HP_font_channels = args.HP_font_channels
@@ -413,9 +414,7 @@ if __name__ == '__main__':
         data.HP_glyph_output_size = args.HP_glyph_output_size
         data.HP_glyph_dropout = args.HP_glyph_dropout
         data.HP_glyph_cnn_dropout = args.HP_glyph_cnn_dropout
-
-        data.HP_iteration = 50  # cws
-        data.norm_gaz_emb = True  # ner: False, cws: True
+        data.norm_gaz_emb = False if 'NER' in args.name else True  # ner: False, cws: True
 
         data.HP_fix_gaz_emb = False
         data_initialization(data, gaz_file, train_file, dev_file, test_file)

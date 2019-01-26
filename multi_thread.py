@@ -9,9 +9,10 @@
 
 from multiprocessing import Process, Manager, Lock
 from time import sleep
+
 from pynvml import *
+
 from utils.crazy_finetune import *
-import random
 
 options = {
     'name': ['WeiboNER'],
@@ -29,11 +30,12 @@ options = {
     'HP_glyph_cnn_dropout': [0.5],
 }
 
+
 def judge_free_gpu(id):
     handle = nvmlDeviceGetHandleByIndex(id)
     info = nvmlDeviceGetMemoryInfo(handle)
     ps = nvmlDeviceGetComputeRunningProcesses(handle)
-    if info.free / 1024 ** 2 > 3000 and len(ps) < 3:
+    if info.free / 1024 ** 2 > 3000 and len(ps) < 5:
         return True
     return False
 
@@ -68,7 +70,8 @@ def pao(gpu_id, command):
 
 if __name__ == '__main__':
     nvmlInit()
-    gpu_usage_list = Manager().list([0, 0, 0, 0])
+    deviceCount = nvmlDeviceGetCount()
+    gpu_usage_list = Manager().list([0 for i in range(deviceCount)])
     lock = Lock()
     params_list = list(product(*options.values()))
     while params_list:
@@ -86,6 +89,3 @@ if __name__ == '__main__':
             P.start()
         lock.release()
         sleep(1)
-
-
-
