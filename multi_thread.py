@@ -25,13 +25,13 @@ min_gpu_free_mem = 3500
 max_gpu_process = 5
 
 # 在每一块GPU上最多并发跑这个程序的数量
-max_mine_process = 2
+max_mine_process = 1
 
 # 使用的GPU编号
 gpus = [2]
 
 options = {
-    'name': ['CTB6CWS'],
+    'name': ['UD1POS'],
     'mode': ['char'],
     'gaz_dropout': [0.5],
     'HP_lr': [0.01],
@@ -58,7 +58,7 @@ def judge_free_gpu(id):
 def get_free_gpu_id_and_update(usage_list):
     for i, a in enumerate(usage_list):
         if i in gpus:
-            if a < 3 and judge_free_gpu(i):
+            if a < max_mine_process and judge_free_gpu(i):
                 usage_list[i] += 1
                 return i
     return -1

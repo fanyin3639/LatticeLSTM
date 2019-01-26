@@ -344,20 +344,23 @@ def train(data, save_model_dir, seg=True):
         gc.collect() 
 
 
-def load_model_decode(save_dir, data, name, seg=True):
+def load_model_decode(save_dir, data):
     logger.info("Load Model from file: " + save_dir)
     model = SeqModel(data)
     model.load_state_dict(torch.load(save_dir))
-    logger.info(F"Decode {name} data ...")
+    logger.info(F"Decode dev data ...")
     start_time = time.time()
-    speed, acc, p, r, f, pred_results = evaluate(data, model, name)
+    speed, acc, p, r, f, pred_results = evaluate(data, model, 'dev')
     end_time = time.time()
     time_cost = end_time - start_time
-    if seg:
-        logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%(name, time_cost, speed, acc, p, r, f)))
-    else:
-        logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f"%(name, time_cost, speed, acc)))
-    return pred_results
+    logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%('dev', time_cost, speed, acc, p, r, f)))
+
+    logger.info(F"Decode test data ...")
+    start_time = time.time()
+    speed, acc, p, r, f, pred_results = evaluate(data, model, 'test')
+    end_time = time.time()
+    time_cost = end_time - start_time
+    logger.info(("%s: time:%.2fs, speed:%.2fst/s; acc: %.4f, p: %.4f, r: %.4f, f: %.4f"%('test', time_cost, speed, acc, p, r, f)))
 
 
 if __name__ == '__main__':
@@ -411,14 +414,12 @@ if __name__ == '__main__':
         train(data, save_dir)
     elif args.status == 'test':
         data = load_data_setting(args.loadmodel + '/data.set')
-        data.generate_instance_with_gaz(dev_file, 'dev')
-        load_model_decode(args.loadmodel + '/saved.model', data, 'dev')
-        data.generate_instance_with_gaz(test_file, 'test')
-        load_model_decode(args.loadmodel + '/saved.model', data, 'test')
-    elif args.status == 'decode':
-        data = load_data_setting(args.loadmodel + '/data.set')
-        data.generate_instance_with_gaz(args.raw, 'raw')
-        decode_results = load_model_decode(args.loadmodel + '/saved.model', data, 'raw')
-        data.write_decoded_results(args.loadmodel + '/decoded.output', decode_results, 'raw')
+        load_model_decode(args.loadmodel + '/saved.model', data)
+        # load_model_decode(args.loadmodel + '/saved.model', data, 'test')
+    # elif args.status == 'decode':
+    #     data = load_data_setting(args.loadmodel + '/data.set')
+    #     data.generate_instance_with_gaz(args.raw, 'raw')
+    #     decode_results = load_model_decode(args.loadmodel + '/saved.model', data, 'raw')
+    #     data.write_decoded_results(args.loadmodel + '/decoded.output', decode_results, 'raw')
     else:
         logger.info("Invalid argument! Please use valid arguments! (train/test/decode)")
