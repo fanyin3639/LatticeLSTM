@@ -29,16 +29,17 @@ def test_all(path):
 
 
 def recur_test(sub_tree_root, status_dict=None):
-    sons = os.listdir(sub_tree_root)
-    if 'data.set' in sons:
-        command = F'python main.py --status test --loadmodel {sub_tree_root}'
-        try:
-            os.system(command)
-        except:
-            print(command + 'failed')
-    else:
-        for son in sons:
-            recur_test(os.path.join(sub_tree_root, son), status_dict)
+    if os.path.isdir(sub_tree_root):
+        sons = os.listdir(sub_tree_root)
+        if 'data.set' in sons:
+            command = F'python ../main.py --status test --loadmodel {sub_tree_root}'
+            try:
+                os.system(command)
+            except:
+                print(command + 'failed')
+        else:
+            for son in sons:
+                recur_test(os.path.join(sub_tree_root, son), status_dict)
 
 
 if __name__ == '__main__':
