@@ -418,6 +418,8 @@ if __name__ == '__main__':
         train(data, save_dir)
     elif args.status == 'test':
         data = load_data_setting(args.loadmodel + '/data.set')
+        data.HP_glyph_layernorm = False
+        data.HP_glyph_batchnorm = False
         load_model_decode(args.loadmodel + '/saved.model', data)
         # load_model_decode(args.loadmodel + '/saved.model', data, 'test')
     # elif args.status == 'decode':
